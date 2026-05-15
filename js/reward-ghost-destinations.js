@@ -26,11 +26,15 @@
     return "Hero";
   };
 
-  const pulseTab = (destination) => {
+  const findTab = (destination) => {
     const label = tabForDestination(destination);
-    const tab = [...document.querySelectorAll(".gd-tab")].find((node) =>
+    return [...document.querySelectorAll(".gd-tab")].find((node) =>
       (node.textContent || "").includes(label)
     );
+  };
+
+  const pulseTab = (destination) => {
+    const tab = findTab(destination);
     if (!tab) return;
     window.setTimeout(() => {
       tab.classList.remove("ghost-target-pulse");
@@ -43,9 +47,42 @@
     if (ghost.dataset.destinationSet) return;
     ghost.dataset.destinationSet = "true";
     const destination = destinationForGhost(ghost);
+    ghost.dataset.destination = destination;
     ghost.classList.add(`to-${destination}`);
     pulseTab(destination);
   };
+
+  const handoffFlyingGhosts = () => {
+    document.querySelectorAll(".gd-reward-ghost").forEach((ghost) => {
+      const rect = ghost.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+      const destination = ghost.dataset.destination || destinationForGhost(ghost);
+      const tab = findTab(destination);
+      const tabRect = tab?.getBoundingClientRect();
+      const clone = ghost.cloneNode(true);
+
+      clone.classList.add("gd-ghost-handoff", `to-${destination}`);
+      clone.classList.remove("gd-reward-ghost");
+      clone.style.left = `${rect.left + rect.width / 2}px`;
+      clone.style.top = `${rect.top}px`;
+      clone.style.bottom = "auto";
+      clone.style.setProperty("--handoff-target-x", `${tabRect ? tabRect.left + tabRect.width / 2 : window.innerWidth / 2}px`);
+      clone.style.setProperty("--handoff-target-y", `${tabRect ? tabRect.top + tabRect.height / 2 : window.innerHeight - 32}px`);
+
+      document.body.appendChild(clone);
+      clone.addEventListener("animationend", () => clone.remove(), { once: true });
+    });
+  };
+
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      const ack = event.target.closest?.("[data-ack-result]");
+      if (!ack || ack.disabled) return;
+      handoffFlyingGhosts();
+    },
+    true
+  );
 
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
