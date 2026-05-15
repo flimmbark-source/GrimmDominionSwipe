@@ -1,0 +1,6 @@
+<svg width="900" height="520" viewBox="0 0 900 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="14" y="14" width="872" height="492" rx="10" fill="#070908" stroke="#7d6842" stroke-width="2"/>
+  <rect x="24" y="24" width="852" height="472" rx="6" fill="url(#grain)" stroke="#2e2a1e" stroke-width="1"/>
+  <path d="M14 70V14h56M830 14h56v56M886 450v56h-56M70 506H14v-56" stroke="#b3925b" stroke-width="2"/>
+  <defs><pattern id="grain" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#080b0a"/><circle cx="2" cy="3" r=".7" fill="#101713"/><circle cx="6" cy="5" r=".5" fill="#15120d"/></pattern></defs>
+</svg>
