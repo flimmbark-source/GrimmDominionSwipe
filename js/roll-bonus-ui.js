@@ -39,6 +39,7 @@
     market: "◧",
     supplies: "▣",
   };
+  window.GD_TAG_ICONS = TAG_ICONS;
 
   const amount = (modifier) => {
     if (typeof modifier.rollBonus === "number") return modifier.rollBonus;
