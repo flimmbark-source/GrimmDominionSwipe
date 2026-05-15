@@ -1,0 +1,39 @@
+.gd-swipe-label {
+  display: none !important;
+}
+
+.gd-choice-tag-icons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  min-height: 18px;
+  margin: -2px 0 4px;
+}
+
+.gd-choice-tag-icons span {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #4f4630;
+  background: #050605d9;
+  color: var(--gd-gold);
+  font-size: 10px;
+  line-height: 1;
+  box-shadow: inset 0 0 8px #000, 0 0 6px #e2b64d1f;
+}
+
+@media (max-height: 700px) {
+  .gd-choice-tag-icons {
+    gap: 3px;
+    min-height: 15px;
+    margin-bottom: 3px;
+  }
+
+  .gd-choice-tag-icons span {
+    width: 15px;
+    height: 15px;
+    font-size: 9px;
+  }
+}
