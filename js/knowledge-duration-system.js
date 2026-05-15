@@ -1,4 +1,4 @@
-// Hero stat modifier chips such as Clean Theft / Marked Route now have durations.
+// Hero stat modifier chips such as Clean Theft / Marked Route now have usage-based durations.
 (() => {
   const DEFAULT_KNOWLEDGE_DURATION = 5;
   const KNOWLEDGE_DURATIONS = {
@@ -43,15 +43,25 @@
     game.hero.knowledgeTurns[name] = Math.max(game.hero.knowledgeTurns[name] || 0, duration);
   };
 
-  const tickKnowledgeDurations = (skipNames = []) => {
+  const tickSpecificKnowledgeDurations = (usedNames = [], skipNames = []) => {
     ensureKnowledgeTurns();
+    const used = new Set(usedNames);
     const skip = new Set(skipNames);
-    Object.keys(game.hero.knowledgeTurns).forEach(name => {
-      if (skip.has(name)) return;
+    used.forEach(name => {
+      if (skip.has(name) || !game.hero.knowledgeTurns[name]) return;
       game.hero.knowledgeTurns[name] = Math.max(0, game.hero.knowledgeTurns[name] - 1);
       if (game.hero.knowledgeTurns[name] <= 0) delete game.hero.knowledgeTurns[name];
     });
     game.hero.knowledge = game.hero.knowledge.filter(name => (game.hero.knowledgeTurns[name] || 0) > 0);
+  };
+
+  const knowledgeUsedByChoice = (choiceData) => {
+    if (!choiceData || typeof getChoiceModifiers !== "function") return [];
+    return [...new Set(
+      getChoiceModifiers(choiceData)
+        .filter(modifier => modifier.source === "knowledge" && modifier.itemName)
+        .map(modifier => modifier.itemName)
+    )];
   };
 
   const baseApplyRewards = typeof applyRewards === "function" ? applyRewards : null;
@@ -68,17 +78,16 @@
   const baseChoose = typeof choose === "function" ? choose : null;
   if (baseChoose) {
     window.choose = function choose(side) {
-      const shouldTick = !game.awaitingResultAck && game.heroTimer > 0;
+      const card = cards?.[game.currentCardId];
+      const choiceData = card?.choices?.[side];
+      const usedBeforeRoll = !game.awaitingResultAck && game.heroTimer > 0 ? knowledgeUsedByChoice(choiceData) : [];
       game.hero.knowledgeAcquiredThisAction = [];
       baseChoose(side);
-      if (shouldTick && game.awaitingResultAck) {
+      if (usedBeforeRoll.length && game.awaitingResultAck) {
         const protectedThisAction = [...(game.hero.knowledgeAcquiredThisAction || [])];
-        tickKnowledgeDurations(protectedThisAction);
+        tickSpecificKnowledgeDurations(usedBeforeRoll, protectedThisAction);
         game.hero.knowledgeAcquiredThisAction = [];
-        game.log.unshift(protectedThisAction.length
-          ? "Hero modifiers tick down by 1 action; newly gained modifiers are protected."
-          : "Hero modifiers tick down by 1 action."
-        );
+        game.log.unshift(`${usedBeforeRoll.join(", ")} used; duration ticks down.`);
         render?.();
       }
     };
@@ -95,7 +104,8 @@
   }
 
   window.addTimedKnowledge = addTimedKnowledge;
-  window.tickKnowledgeDurations = tickKnowledgeDurations;
+  window.tickKnowledgeDurations = tickSpecificKnowledgeDurations;
+  window.knowledgeUsedByChoice = knowledgeUsedByChoice;
   ensureKnowledgeTurns();
   if (typeof render === "function") render();
 })();
