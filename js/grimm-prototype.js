@@ -7,19 +7,8 @@ const ART = {
   coin: "art_crops/item_crow_coin.png",
 };
 
-const STAT_ICONS = {
-  stealth: "🕶",
-  combat: "⚔",
-  cunning: "👁",
-  spirit: "✦",
-  survival: "🐾",
-};
-
-const RESULT_ICONS = {
-  failure: "☠",
-  success: "◇",
-  great: "♛",
-};
+const STAT_ICONS = { stealth: "🕶", combat: "⚔", cunning: "👁", spirit: "✦", survival: "🐾" };
+const RESULT_ICONS = { failure: "☠", success: "◇", great: "♛" };
 
 const initialGame = () => ({
   activeTab: "explore",
@@ -28,17 +17,13 @@ const initialGame = () => ({
   selectedCommand: null,
   currentCardId: "scout_sniffs_path",
   pendingNextCardId: null,
-  actionLockRemaining: 0,
+  awaitingResultAck: false,
   lastAction: null,
   result: "Choose a path. The Scout is close enough to smell you.",
   partyHealth: 7,
   corruption: 8,
   castleReadiness: 3,
-  darkLord: {
-    evilEnergy: 7,
-    maxEvilEnergy: 10,
-    pending: [],
-  },
+  darkLord: { evilEnergy: 7, maxEvilEnergy: 10, pending: [] },
   hero: {
     id: "goblin",
     name: "Goblin Outlaw",
@@ -60,9 +45,9 @@ const initialGame = () => ({
   regions: {
     village: { id: "village", name: "Village", subtitle: "The rooftops feel watched.", state: "Suspected", signals: ["noise"], pending: [] },
     swamp: { id: "swamp", name: "Swamp", subtitle: "Black water clings to the roots.", state: "Corrupted", signals: ["corruption"], pending: [] },
-    shrine: { id: "shrine", name: "Forest Shrine", subtitle: "Old magic stirs beneath the stones.", state: "Hunted", signals: ["magic"] },
-    road: { id: "road", name: "Old Road", subtitle: "The road remembers every footprint.", state: "Hero Revealed", signals: ["sighting"] },
-    castle: { id: "castle", name: "Castle", subtitle: "The throne waits behind iron prayers.", state: "Quiet", signals: [] },
+    shrine: { id: "shrine", name: "Forest Shrine", subtitle: "Old magic stirs beneath the stones.", state: "Hunted", signals: ["magic"], pending: [] },
+    road: { id: "road", name: "Old Road", subtitle: "The road remembers every footprint.", state: "Hero Revealed", signals: ["sighting"], pending: [] },
+    castle: { id: "castle", name: "Castle", subtitle: "The throne waits behind iron prayers.", state: "Quiet", signals: [], pending: [] },
   },
   party: [
     { name: "Goblin Outlaw", region: "Village", status: "Hidden", resource: "Gold", value: 4 },
@@ -110,8 +95,28 @@ const cards = {
     art: ART.scout,
     text: "A cottage door hangs crooked on iron hinges. Something valuable glints beneath the floorboards.",
     choices: {
-      left: { label: "Pick the lock", stat: "cunning", difficulty: 3, timeCost: 5, outcomes: { failure: "The lock snaps loudly. Noise ripples across the Village.", success: "You pry it open and gain 1 Gold.", great: "You empty the hiding place quietly. Gain 2 Gold." } },
-      right: { label: "Listen first", stat: "stealth", difficulty: 2, timeCost: 3, outcomes: { failure: "Floorboards creak. The Village stays Suspected.", success: "You hear patrols outside and avoid the worst path.", great: "You hear a hidden route. Your next exit will be safer." } },
+      left: {
+        label: "Pick the lock",
+        stat: "cunning",
+        difficulty: 3,
+        timeCost: 5,
+        outcomes: {
+          failure: "The lock snaps loudly. Noise ripples across the Village.",
+          success: "You pry it open and gain 1 Gold.",
+          great: "You empty the hiding place quietly. Gain 2 Gold.",
+        },
+      },
+      right: {
+        label: "Listen first",
+        stat: "stealth",
+        difficulty: 2,
+        timeCost: 3,
+        outcomes: {
+          failure: "Floorboards creak. The Village stays Suspected.",
+          success: "You hear patrols outside and avoid the worst path.",
+          great: "You hear a hidden route. Your next exit will be safer.",
+        },
+      },
     },
   },
 };
@@ -147,14 +152,15 @@ function rollOutcome(choice) {
 }
 
 function choose(side) {
-  if (game.heroTimer <= 0 || game.actionLockRemaining > 0) return;
+  if (game.heroTimer <= 0 || game.awaitingResultAck) return;
   const card = cards[game.currentCardId];
   const choice = card.choices[side];
   const outcome = rollOutcome(choice);
   const nextCardId = game.currentCardId === "scout_sniffs_path" ? "locked_cottage" : "scout_sniffs_path";
+
   game.heroTimer = Math.max(0, game.heroTimer - choice.timeCost);
   applyOutcome(choice, outcome);
-  game.actionLockRemaining = 2;
+  game.awaitingResultAck = true;
   game.pendingNextCardId = nextCardId;
   game.lastAction = {
     side,
@@ -170,12 +176,14 @@ function choose(side) {
   render();
 }
 
-function advanceAfterCooldown() {
-  if (!game.pendingNextCardId) return;
+function acknowledgeResult() {
+  if (!game.awaitingResultAck || !game.pendingNextCardId) return;
   game.currentCardId = game.pendingNextCardId;
   game.pendingNextCardId = null;
-  game.actionLockRemaining = 0;
+  game.awaitingResultAck = false;
   game.lastAction = null;
+  game.result = "Choose your next path.";
+  render();
 }
 
 function applyOutcome(choice, outcome) {
@@ -201,17 +209,13 @@ function formatOutcome(type) {
 
 function tick() {
   game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
-  if (game.actionLockRemaining > 0) {
-    game.actionLockRemaining = Math.max(0, game.actionLockRemaining - 1);
-    if (game.actionLockRemaining === 0) advanceAfterCooldown();
-  } else {
-    game.heroTimer = Math.max(0, game.heroTimer - 1);
-  }
+  if (!game.awaitingResultAck) game.heroTimer = Math.max(0, game.heroTimer - 1);
+
   if (game.darkLordTimer === 0) {
     resolveDarkLordPlan();
     game.darkLordTimer = 60;
     game.heroTimer = 40;
-    game.actionLockRemaining = 0;
+    game.awaitingResultAck = false;
     game.pendingNextCardId = null;
     game.lastAction = null;
   }
@@ -307,20 +311,20 @@ function renderExplore() {
 function renderActionResult() {
   const action = game.lastAction;
   const label = formatOutcome(action.outcomeType);
-  return `<div class="gd-action-result ${action.outcomeType}">
+  return `<button class="gd-action-result ${action.outcomeType}" data-ack-result>
     <div class="gd-roll-chip">d100<b>${action.roll}</b></div>
     <div class="gd-result-icon">${RESULT_ICONS[action.outcomeType]}</div>
     <div class="gd-result-copy">
       <div class="gd-result-heading">${label} · ${action.choiceLabel}</div>
       <p>${action.text}</p>
-      <div class="gd-cooldown-pill">Next card in ${game.actionLockRemaining}s</div>
+      <div class="gd-cooldown-pill">Tap to continue</div>
     </div>
-  </div>`;
+  </button>`;
 }
 
 function renderChoice(side, choice) {
   const thresholds = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
-  const locked = game.heroTimer <= 0 || game.actionLockRemaining > 0;
+  const locked = game.heroTimer <= 0 || game.awaitingResultAck;
   const chosen = game.lastAction?.side === side;
   return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>
     <div class="gd-choice-title">${choice.label}</div>
@@ -392,6 +396,7 @@ function renderTabs() {
 
 function bindEvents() {
   document.querySelectorAll("[data-choice]").forEach(button => button.addEventListener("click", () => choose(button.dataset.choice)));
+  document.querySelectorAll("[data-ack-result]").forEach(button => button.addEventListener("click", acknowledgeResult));
   document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => setTab(button.dataset.tab)));
   document.querySelectorAll("[data-command]").forEach(button => button.addEventListener("click", () => selectCommand(button.dataset.command)));
   document.querySelectorAll("[data-region]").forEach(button => button.addEventListener("click", () => targetRegion(button.dataset.region)));
@@ -401,6 +406,7 @@ function bindEvents() {
 window.addEventListener("keydown", event => {
   if (event.key === "ArrowLeft") choose("left");
   if (event.key === "ArrowRight") choose("right");
+  if (event.key === "Enter" || event.key === " ") acknowledgeResult();
   if (event.key.toLowerCase() === "d") setTab("darklord");
 });
 
