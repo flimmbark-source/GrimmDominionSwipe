@@ -24,6 +24,20 @@
   100% { opacity: 0; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 8px) scale(.58); }
 }
 
+.gd-ghost-handoff {
+  position: fixed !important;
+  bottom: auto !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  animation: gdGhostHandoffToTab 1100ms cubic-bezier(.2, .72, .2, 1) forwards !important;
+}
+
+@keyframes gdGhostHandoffToTab {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(.95); }
+  72% { opacity: 1; left: var(--handoff-target-x); top: var(--handoff-target-y); transform: translate(-50%, -50%) scale(.78); }
+  100% { opacity: 0; left: var(--handoff-target-x); top: var(--handoff-target-y); transform: translate(-50%, -45%) scale(.52); }
+}
+
 .gd-tab.ghost-target-pulse { animation: gdTabGhostPulse 850ms ease-out; }
 @keyframes gdTabGhostPulse {
   0% { transform: translateY(0) scale(1); }
