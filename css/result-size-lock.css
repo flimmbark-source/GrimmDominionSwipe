@@ -9,7 +9,7 @@
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: 96px;
+  bottom: 10px;
   min-height: 78px;
   max-height: 92px;
   margin: 0 !important;
@@ -23,7 +23,7 @@
 
 @media (max-height: 700px) {
   .gd-card:has(.gd-action-result) .gd-action-result {
-    bottom: 86px;
+    bottom: 8px;
     min-height: 70px;
     max-height: 82px;
   }
