@@ -1,0 +1,78 @@
+.gd-card-art {
+  position: relative;
+}
+
+.gd-art-bonus-overlay {
+  position: absolute;
+  inset: 8px 8px auto;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  pointer-events: none;
+}
+
+.gd-art-bonus-list {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  max-width: 92%;
+}
+
+.gd-art-bonus-list.left {
+  justify-self: start;
+  text-align: left;
+}
+
+.gd-art-bonus-list.right {
+  justify-self: end;
+  text-align: right;
+}
+
+.gd-art-bonus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid #4f4630;
+  background: #050605d9;
+  color: var(--gd-cream);
+  font-size: 9px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  box-shadow: 0 0 10px #000, inset 0 0 10px #000;
+}
+
+.gd-art-bonus-list.right .gd-art-bonus-chip {
+  justify-self: end;
+  flex-direction: row-reverse;
+}
+
+.gd-art-bonus-chip b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gd-gold);
+  font-weight: 800;
+}
+
+.gd-art-bonus-chip span {
+  color: var(--gd-green);
+  font-weight: 900;
+}
+
+@media (max-height: 700px) {
+  .gd-art-bonus-overlay {
+    inset: 6px 6px auto;
+    gap: 6px;
+  }
+
+  .gd-art-bonus-chip {
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+}
