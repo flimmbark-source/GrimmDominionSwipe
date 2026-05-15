@@ -6,7 +6,7 @@
 
 .gd-knowledge-chip {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) auto;
+  grid-template-columns: 26px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 7px;
   padding: 6px 8px;
@@ -43,6 +43,20 @@
   white-space: nowrap;
 }
 
+.gd-knowledge-chip em {
+  font-style: normal;
+  min-width: 38px;
+  justify-self: end;
+  padding: 3px 6px;
+  border: 1px solid #665232;
+  background: #050605;
+  color: var(--gd-gold);
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 0 8px #e2b64d24;
+}
+
 .ghost-timer-pulse {
   animation: gdGhostTimerPulse 900ms ease-out;
 }
@@ -68,5 +82,11 @@
   .gd-knowledge-chip span {
     width: 21px;
     height: 21px;
+  }
+
+  .gd-knowledge-chip em {
+    min-width: 32px;
+    font-size: 10px;
+    padding: 2px 5px;
   }
 }
