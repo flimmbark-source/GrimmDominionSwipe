@@ -9,6 +9,14 @@ const ART = {
 
 const STAT_ICONS = { stealth: "🕶", combat: "⚔", cunning: "👁", spirit: "✦", survival: "🐾" };
 const RESULT_ICONS = { failure: "☠", success: "◇", great: "♛" };
+const GHOST_META = {
+  gold: { icon: "●", className: "gold" },
+  damage: { icon: "♥", className: "damage" },
+  status: { icon: "◉", className: "status" },
+  noise: { icon: "〰", className: "noise" },
+  item: { icon: "▣", className: "item" },
+  xp: { icon: "✦", className: "xp" },
+};
 
 const initialGame = () => ({
   activeTab: "explore",
@@ -143,12 +151,16 @@ function clamp(value, min, max) {
 }
 
 function rollOutcome(choice) {
-  const statValue = game.hero.stats[choice.stat];
-  const { red, green } = calculateThresholds(statValue, choice.difficulty);
+  const { red, green } = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
   const roll = Math.floor(Math.random() * 100) + 1;
   if (roll <= red) return { type: "failure", roll, red, green };
   if (roll > green) return { type: "great", roll, red, green };
   return { type: "success", roll, red, green };
+}
+
+function ghost(kind, text) {
+  const meta = GHOST_META[kind] ?? GHOST_META.status;
+  return { kind, text, icon: meta.icon, className: meta.className };
 }
 
 function choose(side) {
@@ -159,7 +171,7 @@ function choose(side) {
   const nextCardId = game.currentCardId === "scout_sniffs_path" ? "locked_cottage" : "scout_sniffs_path";
 
   game.heroTimer = Math.max(0, game.heroTimer - choice.timeCost);
-  applyOutcome(choice, outcome);
+  const ghosts = applyOutcome(card.id, side, choice, outcome);
   game.awaitingResultAck = true;
   game.pendingNextCardId = nextCardId;
   game.lastAction = {
@@ -170,6 +182,7 @@ function choose(side) {
     red: outcome.red,
     green: outcome.green,
     text: choice.outcomes[outcome.type],
+    ghosts,
   };
   game.result = `<strong>${formatOutcome(outcome.type)} · d100 ${outcome.roll}</strong><br>${choice.outcomes[outcome.type]}`;
   game.log.unshift(`${card.title}: ${formatOutcome(outcome.type)} on ${choice.label} (${outcome.roll}).`);
@@ -186,21 +199,44 @@ function acknowledgeResult() {
   render();
 }
 
-function applyOutcome(choice, outcome) {
-  if (outcome.type === "failure") {
-    if (choice.stat === "combat") game.partyHealth = Math.max(0, game.partyHealth - 1);
+function applyOutcome(cardId, side, choice, outcome) {
+  const ghosts = [];
+  const type = outcome.type;
+
+  if (type === "failure") {
+    if (choice.stat === "combat") {
+      game.partyHealth = Math.max(0, game.partyHealth - 1);
+      ghosts.push(ghost("damage", "-1 Health"));
+    }
     game.hero.status = "Revealed";
     game.regions.village.state = "Hero Revealed";
     if (!game.regions.village.signals.includes("sighting")) game.regions.village.signals.push("sighting");
+    ghosts.push(ghost("status", "Revealed"));
   }
-  if (outcome.type === "success") {
-    if (choice.label.toLowerCase().includes("lock")) game.hero.resourceValue += 1;
+
+  if (type === "success") {
+    if (cardId === "locked_cottage" && side === "left") {
+      game.hero.resourceValue += 1;
+      ghosts.push(ghost("gold", "+1 Gold"));
+    }
     if (!game.regions.village.signals.includes("noise")) game.regions.village.signals.push("noise");
+    ghosts.push(ghost("noise", "Noise"));
   }
-  if (outcome.type === "great") {
-    if (choice.label.toLowerCase().includes("lock")) game.hero.resourceValue += 2;
-    if (choice.stat === "stealth") game.hero.status = "Hidden";
+
+  if (type === "great") {
+    if (cardId === "locked_cottage" && side === "left") {
+      game.hero.resourceValue += 2;
+      ghosts.push(ghost("gold", "+2 Gold"));
+    }
+    if (cardId === "locked_cottage" && side === "right") ghosts.push(ghost("item", "Safe Route"));
+    if (choice.stat === "stealth") {
+      game.hero.status = "Hidden";
+      ghosts.push(ghost("status", "Hidden"));
+    }
+    if (cardId === "scout_sniffs_path" && side === "right") ghosts.push(ghost("xp", "Silent Kill"));
   }
+
+  return ghosts.length ? ghosts : [ghost(type === "failure" ? "damage" : "xp", formatOutcome(type))];
 }
 
 function formatOutcome(type) {
@@ -295,6 +331,7 @@ function renderExplore() {
     </section>
     <section class="gd-card">
       <div class="gd-timer gd-card-timer">${game.heroTimer}s</div>
+      ${renderGhostLayer()}
       <div class="gd-card-art" style="background-image:url('${card.art}')"></div>
       <div class="gd-card-body">
         <div class="gd-card-title">${card.title}</div>
@@ -306,6 +343,16 @@ function renderExplore() {
     <div class="gd-result-toast">${game.result}</div>
     ${renderHeroFooter()}
   </div>`;
+}
+
+function renderGhostLayer() {
+  const ghosts = game.lastAction?.ghosts ?? [];
+  if (!ghosts.length) return "";
+  return `<div class="gd-ghost-layer">${ghosts.map((item, index) => {
+    const x = 32 + index * 23;
+    const y = 112 + (index % 2) * 26;
+    return `<div class="gd-reward-ghost ${item.className}" style="--ghost-x:${x}%;--ghost-y:${y}px;--ghost-delay:${index * 130}ms"><span class="ghost-icon">${item.icon}</span><span class="ghost-text">${item.text}</span></div>`;
+  }).join("")}</div>`;
 }
 
 function renderActionResult() {
@@ -326,7 +373,7 @@ function renderChoice(side, choice) {
   const thresholds = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
   const locked = game.heroTimer <= 0 || game.awaitingResultAck;
   const chosen = game.lastAction?.side === side;
-  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>
+  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>
     <div class="gd-choice-title">${choice.label}</div>
     <div class="gd-choice-mid"><div class="gd-choice-icon"><span>${STAT_ICONS[choice.stat]}</span></div><span>⌛ ${choice.timeCost}s</span></div>
     <div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div>
@@ -339,34 +386,17 @@ function renderHeroFooter() {
 
 function renderHero() {
   const stats = Object.entries(game.hero.stats).map(([name, value]) => `<div class="gd-stat">${STAT_ICONS[name]}<br>${name}<b>${value}</b></div>`).join("");
-  return `<div class="gd-main-scroll">
-    <section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">⛑</div><div class="gd-title">Hero</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
-    <section class="gd-panel gd-hero-card"><img class="gd-hero-art" src="${ART.goblinLarge}"><div><div class="gd-card-title">${game.hero.name}</div><div class="gd-status">◉ ${game.hero.status}</div><div class="gd-resource" style="text-align:left;margin-top:14px">${game.hero.resourceName}: <b>${game.hero.resourceValue}</b></div><div class="gd-subtitle">Stealth / Theft / Escape</div></div></section>
-    <section class="gd-panel"><div class="gd-section-title">Stats</div><div class="gd-stat-grid">${stats}</div></section>
-    <section class="gd-panel"><div class="gd-section-title">Passive Ability</div><div class="gd-card-title" style="font-size:26px">${game.hero.passive.name}</div><div class="gd-card-text">${game.hero.passive.text}</div></section>
-  </div>`;
+  return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">⛑</div><div class="gd-title">Hero</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section><section class="gd-panel gd-hero-card"><img class="gd-hero-art" src="${ART.goblinLarge}"><div><div class="gd-card-title">${game.hero.name}</div><div class="gd-status">◉ ${game.hero.status}</div><div class="gd-resource" style="text-align:left;margin-top:14px">${game.hero.resourceName}: <b>${game.hero.resourceValue}</b></div><div class="gd-subtitle">Stealth / Theft / Escape</div></div></section><section class="gd-panel"><div class="gd-section-title">Stats</div><div class="gd-stat-grid">${stats}</div></section><section class="gd-panel"><div class="gd-section-title">Passive Ability</div><div class="gd-card-title" style="font-size:26px">${game.hero.passive.name}</div><div class="gd-card-text">${game.hero.passive.text}</div></section></div>`;
 }
 
 function renderParty() {
   const cardsHtml = game.party.map(p => `<div class="gd-party-card"><div class="role">${p.name}</div><div class="meta">⌖ ${p.region}<br>◉ ${p.status}<br>${p.resource}: <b>${p.value}</b></div></div>`).join("");
-  return `<div class="gd-main-scroll">
-    <section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">♟</div><div class="gd-title">Party</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
-    <section class="gd-panel"><div class="gd-meter-grid"><div class="gd-meter"><div class="icon">💚</div><div class="value">${game.partyHealth}/10</div><div class="label">Party Health</div></div><div class="gd-meter"><div class="icon">☠</div><div class="value">${game.corruption}/20</div><div class="label">Corruption</div></div><div class="gd-meter"><div class="icon">♜</div><div class="value">${game.castleReadiness}/6</div><div class="label">Readiness</div></div></div></section>
-    <section class="gd-panel"><div class="gd-section-title">Overview</div><div class="gd-party-grid">${cardsHtml}</div></section>
-    <section class="gd-panel"><div class="gd-section-title">Current Objectives</div><div class="gd-objective-list"><div class="gd-objective">Cleanse Shrine <span style="float:right;color:var(--gd-green)">+2 Readiness</span></div><div class="gd-objective">Discover Secret Route <span style="float:right;color:var(--gd-green)">+2 Readiness</span></div><div class="gd-objective">Defeat Ogre <span style="float:right;color:var(--gd-green)">+1 Readiness</span></div></div></section>
-  </div>`;
+  return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">♟</div><div class="gd-title">Party</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section><section class="gd-panel"><div class="gd-meter-grid"><div class="gd-meter"><div class="icon">💚</div><div class="value">${game.partyHealth}/10</div><div class="label">Party Health</div></div><div class="gd-meter"><div class="icon">☠</div><div class="value">${game.corruption}/20</div><div class="label">Corruption</div></div><div class="gd-meter"><div class="icon">♜</div><div class="value">${game.castleReadiness}/6</div><div class="label">Readiness</div></div></div></section><section class="gd-panel"><div class="gd-section-title">Overview</div><div class="gd-party-grid">${cardsHtml}</div></section><section class="gd-panel"><div class="gd-section-title">Current Objectives</div><div class="gd-objective-list"><div class="gd-objective">Cleanse Shrine <span style="float:right;color:var(--gd-green)">+2 Readiness</span></div><div class="gd-objective">Discover Secret Route <span style="float:right;color:var(--gd-green)">+2 Readiness</span></div><div class="gd-objective">Defeat Ogre <span style="float:right;color:var(--gd-green)">+1 Readiness</span></div></div></section></div>`;
 }
 
 function renderInventory() {
-  const items = [
-    ["Softstep Boots", "Move silently.", "🥾"], ["Lockpick Set", "Open locked containers.", "🗝"], ["Throwing Knives", "Ranged damage.", "🔪"], ["Shadow Hood", "Harder to spot.", "🕶"], ["Rope Hook", "Reach high places.", "⚓"], ["Torch Kit", "Light the way.", "🔥"]
-  ];
-  return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">▣</div><div class="gd-title">Inventory</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
-    <section class="gd-footer-chip"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name}</div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold<br><b>${game.hero.resourceValue}</b></div></section>
-    <section class="gd-panel"><div class="gd-section-title">Equipped</div><div class="gd-item-row">${game.hero.equipment.map(item => `<div class="gd-item-card"><div>${item.slot}</div><img class="gd-item-icon" src="${item.icon}"><b>${item.name}</b><small>${item.text}</small></div>`).join("")}</div></section>
-    <section class="gd-panel"><div class="gd-section-title">Bag</div><div class="gd-party-grid">${items.map(item => `<div class="gd-item-card"><div style="font-size:34px">${item[2]}</div><b>${item[0]}</b><small>${item[1]}</small></div>`).join("")}</div></section>
-    <section class="gd-panel"><div class="gd-section-title">Item Details</div><div class="gd-hero-card"><img class="gd-hero-art" src="${ART.smoke}"><div><div class="gd-card-title" style="font-size:28px">Smoke Bomb</div><div class="gd-card-text">Once per match, when you would become Revealed, become Suspected instead.</div></div></div></section>
-  </div>`;
+  const items = [["Softstep Boots", "Move silently.", "🥾"], ["Lockpick Set", "Open locked containers.", "🗝"], ["Throwing Knives", "Ranged damage.", "🔪"], ["Shadow Hood", "Harder to spot.", "🕶"], ["Rope Hook", "Reach high places.", "⚓"], ["Torch Kit", "Light the way.", "🔥"]];
+  return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">▣</div><div class="gd-title">Inventory</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section><section class="gd-footer-chip"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name}</div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold<br><b>${game.hero.resourceValue}</b></div></section><section class="gd-panel"><div class="gd-section-title">Equipped</div><div class="gd-item-row">${game.hero.equipment.map(item => `<div class="gd-item-card"><div>${item.slot}</div><img class="gd-item-icon" src="${item.icon}"><b>${item.name}</b><small>${item.text}</small></div>`).join("")}</div></section><section class="gd-panel"><div class="gd-section-title">Bag</div><div class="gd-party-grid">${items.map(item => `<div class="gd-item-card"><div style="font-size:34px">${item[2]}</div><b>${item[0]}</b><small>${item[1]}</small></div>`).join("")}</div></section><section class="gd-panel"><div class="gd-section-title">Item Details</div><div class="gd-hero-card"><img class="gd-hero-art" src="${ART.smoke}"><div><div class="gd-card-title" style="font-size:28px">Smoke Bomb</div><div class="gd-card-text">Once per match, when you would become Revealed, become Suspected instead.</div></div></div></section></div>`;
 }
 
 function renderLog() {
@@ -375,10 +405,7 @@ function renderLog() {
 
 function renderDarkLord() {
   const regionNodes = Object.values(game.regions).map(region => `<div class="gd-region-node ${region.id === "castle" ? "castle" : region.id === "village" ? "village" : region.id === "swamp" ? "swamp" : region.id === "shrine" ? "shrine" : "road"}" data-region="${region.id}"><button><div class="name">${region.name}</div><div class="state">${region.state}</div><div class="signals">${signalIcons(region.signals)} ${region.pending?.length ? "◇ " + region.pending.join(" · ") : ""}</div></button></div>`).join("");
-  return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">☠</div><div><div class="gd-title">Dark Lord</div><div class="gd-subtitle">Evil Energy ${game.darkLord.evilEnergy}/${game.darkLord.maxEvilEnergy}</div></div></div>${timerRing(game.darkLordTimer, "dark", "Planning")}<div></div></section>
-    <section class="gd-dark-map"><div class="gd-map-path"></div>${regionNodes}</section>
-    <div class="gd-pending">${game.selectedCommand ? "Choose a region for " + commandCards.find(c => c.id === game.selectedCommand).title : "Tap a command, then tap a region. Cards cost Evil Energy, not time."}</div>
-    <section class="gd-command-tray">${commandCards.map(c => `<button class="gd-command-card ${game.selectedCommand === c.id ? "selected" : ""}" data-command="${c.id}"><div class="gd-energy-cost">${c.cost}</div><div style="font-size:28px">${c.icon}</div><div class="title">${c.title}</div><div class="effect">${c.effect}</div></button>`).join("")}</section></div>`;
+  return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">☠</div><div><div class="gd-title">Dark Lord</div><div class="gd-subtitle">Evil Energy ${game.darkLord.evilEnergy}/${game.darkLord.maxEvilEnergy}</div></div></div>${timerRing(game.darkLordTimer, "dark", "Planning")}<div></div></section><section class="gd-dark-map"><div class="gd-map-path"></div>${regionNodes}</section><div class="gd-pending">${game.selectedCommand ? "Choose a region for " + commandCards.find(c => c.id === game.selectedCommand).title : "Tap a command, then tap a region. Cards cost Evil Energy, not time."}</div><section class="gd-command-tray">${commandCards.map(c => `<button class="gd-command-card ${game.selectedCommand === c.id ? "selected" : ""}" data-command="${c.id}"><div class="gd-energy-cost">${c.cost}</div><div style="font-size:28px">${c.icon}</div><div class="title">${c.title}</div><div class="effect">${c.effect}</div></button>`).join("")}</section></div>`;
 }
 
 function signalIcons(signals = []) {
@@ -386,11 +413,7 @@ function signalIcons(signals = []) {
 }
 
 function renderTabs() {
-  const tabs = game.activeTab === "darklord" ? [
-    ["darklord", "✥", "Map"], ["explore", "▣", "Hero View"], ["log", "☰", "Log"],
-  ] : [
-    ["explore", "✥", "Explore"], ["hero", "⛑", "Hero"], ["party", "♟", "Party"], ["inventory", "▣", "Inventory"], ["log", "☰", "Log"],
-  ];
+  const tabs = game.activeTab === "darklord" ? [["darklord", "✥", "Map"], ["explore", "▣", "Hero View"], ["log", "☰", "Log"]] : [["explore", "✥", "Explore"], ["hero", "⛑", "Hero"], ["party", "♟", "Party"], ["inventory", "▣", "Inventory"], ["log", "☰", "Log"]];
   return `<nav class="gd-tabs" style="grid-template-columns:repeat(${tabs.length},1fr)">${tabs.map(([id, icon, label]) => `<button class="gd-tab ${game.activeTab === id ? "active" : ""}" data-tab="${id}"><div class="gd-tab-icon">${icon}</div>${label}</button>`).join("")}</nav>`;
 }
 

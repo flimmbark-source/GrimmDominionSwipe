@@ -95,6 +95,72 @@
   filter: drop-shadow(0 0 16px currentColor);
 }
 
+.gd-choice.chosen.wink-out {
+  animation: gdChoiceWinkOut 720ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes gdChoiceWinkOut {
+  0% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 18px currentColor); }
+  38% { opacity: 1; transform: scale(1.035); filter: brightness(1.7) drop-shadow(0 0 26px currentColor); }
+  100% { opacity: .18; transform: scale(.86); filter: blur(1px) saturate(.45); }
+}
+
+.gd-ghost-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 4;
+}
+
+.gd-reward-ghost {
+  position: absolute;
+  left: var(--ghost-x, 50%);
+  bottom: var(--ghost-y, 126px);
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 54px;
+  justify-content: center;
+  padding: 5px 8px;
+  border: 1px solid currentColor;
+  background: #050605d9;
+  color: var(--ghost-color, var(--gd-gold));
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: 0 0 16px color-mix(in srgb, currentColor 45%, transparent), inset 0 0 14px #000;
+  animation: gdRewardGhostRise 1650ms ease-out forwards;
+  animation-delay: var(--ghost-delay, 0ms);
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.gd-reward-ghost .ghost-icon {
+  font-size: 16px;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.gd-reward-ghost .ghost-text {
+  color: #f2ead8;
+  font-size: 12px;
+}
+
+.gd-reward-ghost.gold { --ghost-color: #e4b84e; }
+.gd-reward-ghost.damage { --ghost-color: #f05c5c; }
+.gd-reward-ghost.status { --ghost-color: #7ce58d; }
+.gd-reward-ghost.noise { --ghost-color: #b78cff; }
+.gd-reward-ghost.item { --ghost-color: #71d5ff; }
+.gd-reward-ghost.xp { --ghost-color: #f3ec83; }
+
+@keyframes gdRewardGhostRise {
+  0% { opacity: 0; transform: translate(-50%, 18px) scale(.82); }
+  14% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
+  72% { opacity: .92; }
+  100% { opacity: 0; transform: translate(-50%, -78px) scale(.96); }
+}
+
 @media (max-height: 700px) {
   .gd-action-result {
     margin: 5px 0 4px;
@@ -123,5 +189,11 @@
   .gd-cooldown-pill {
     margin-top: 2px;
     font-size: 9px;
+  }
+
+  .gd-reward-ghost {
+    bottom: var(--ghost-y, 96px);
+    font-size: 11px;
+    padding: 4px 7px;
   }
 }
