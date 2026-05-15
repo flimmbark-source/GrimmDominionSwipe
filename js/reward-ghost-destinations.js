@@ -4,6 +4,7 @@
     if (ghost.classList.contains("item") && text.includes("route")) return "explore";
     if (ghost.classList.contains("item") && text.includes("tunnel")) return "explore";
     if (ghost.classList.contains("item") && text.includes("villager")) return "explore";
+    if (ghost.classList.contains("item") && text.includes("added")) return "explore";
     if (ghost.classList.contains("item")) return "inventory";
     if (ghost.classList.contains("gold")) return "inventory";
     if (ghost.classList.contains("food")) return "inventory";
@@ -17,14 +18,13 @@
     return "hero";
   };
 
-  const tabForDestination = (destination) => {
-    if (destination === "explore") return "Explore";
-    if (destination === "hero") return "Hero";
-    if (destination === "party") return "Party";
-    if (destination === "inventory") return "Inventory";
-    if (destination === "log") return "Log";
-    return "Hero";
-  };
+  const tabForDestination = (destination) => ({
+    explore: "Explore",
+    hero: "Hero",
+    party: "Party",
+    inventory: "Inventory",
+    log: "Log",
+  }[destination] || "Hero");
 
   const findTab = (destination) => {
     const label = tabForDestination(destination);
@@ -33,35 +33,32 @@
     );
   };
 
-  const pulseTab = (destination) => {
-    const tab = findTab(destination);
-    if (!tab) return;
+  const pulseTab = (destination, delay = 1850) => {
     window.setTimeout(() => {
+      const tab = findTab(destination);
+      if (!tab) return;
       tab.classList.remove("ghost-target-pulse");
       void tab.offsetWidth;
       tab.classList.add("ghost-target-pulse");
-    }, 1850);
+    }, delay);
   };
 
-  const classifyGhost = (ghost) => {
-    if (ghost.dataset.destinationSet) return;
-    ghost.dataset.destinationSet = "true";
+  const portalGhost = (ghost) => {
+    if (ghost.dataset.portalSet) return;
+    ghost.dataset.portalSet = "true";
     const destination = destinationForGhost(ghost);
     ghost.dataset.destination = destination;
-    ghost.classList.add(`to-${destination}`);
-    pulseTab(destination);
-  };
 
-  const handoffFlyingGhosts = () => {
-    document.querySelectorAll(".gd-reward-ghost").forEach((ghost) => {
+    window.setTimeout(() => {
+      if (!ghost.isConnected) return;
       const rect = ghost.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return;
-      const destination = ghost.dataset.destination || destinationForGhost(ghost);
       const tab = findTab(destination);
       const tabRect = tab?.getBoundingClientRect();
       const clone = ghost.cloneNode(true);
 
-      clone.classList.add("gd-ghost-handoff", `to-${destination}`);
+      clone.className = ghost.className;
+      clone.classList.add("gd-ghost-portal", `to-${destination}`);
       clone.classList.remove("gd-reward-ghost");
       clone.style.left = `${rect.left + rect.width / 2}px`;
       clone.style.top = `${rect.top}px`;
@@ -70,26 +67,18 @@
       clone.style.setProperty("--handoff-target-y", `${tabRect ? tabRect.top + tabRect.height / 2 : window.innerHeight - 32}px`);
 
       document.body.appendChild(clone);
+      ghost.style.visibility = "hidden";
+      pulseTab(destination, 2100);
       clone.addEventListener("animationend", () => clone.remove(), { once: true });
-    });
+    }, 930);
   };
-
-  document.addEventListener(
-    "pointerdown",
-    (event) => {
-      const ack = event.target.closest?.("[data-ack-result]");
-      if (!ack || ack.disabled) return;
-      handoffFlyingGhosts();
-    },
-    true
-  );
 
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (!(node instanceof HTMLElement)) continue;
-        if (node.classList.contains("gd-reward-ghost")) classifyGhost(node);
-        node.querySelectorAll?.(".gd-reward-ghost").forEach(classifyGhost);
+        if (node.classList.contains("gd-reward-ghost")) portalGhost(node);
+        node.querySelectorAll?.(".gd-reward-ghost").forEach(portalGhost);
       }
     }
   });
