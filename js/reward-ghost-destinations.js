@@ -12,11 +12,11 @@
     if (ghost.classList.contains("gold")) return "inventory";
     if (ghost.classList.contains("food")) return "inventory";
     if (ghost.classList.contains("time")) return "timer";
+    if (ghost.classList.contains("damage")) return "hp";
+    if (ghost.classList.contains("heal")) return "hp";
     if (ghost.classList.contains("stat")) return "hero";
     if (ghost.classList.contains("status")) return "hero";
     if (ghost.classList.contains("xp")) return "hero";
-    if (ghost.classList.contains("damage")) return "party";
-    if (ghost.classList.contains("heal")) return "party";
     if (ghost.classList.contains("noise")) return "log";
     return "hero";
   };
@@ -31,6 +31,7 @@
 
   const findDestinationTarget = (destination) => {
     if (destination === "timer") return document.querySelector(".gd-card-timer") || document.querySelector(".gd-timer:not(.red)");
+    if (destination === "hp") return document.querySelector(".gd-inline-hp") || [...document.querySelectorAll(".gd-meter")].find(node => node.textContent?.includes("Party Health"));
     const label = tabForDestination(destination);
     return [...document.querySelectorAll(".gd-tab")].find((node) =>
       (node.textContent || "").includes(label)
@@ -47,7 +48,7 @@
     const fallbackY = destination === "timer" ? window.innerHeight * 0.38 : window.innerHeight - 32;
     const baseX = targetRect ? targetRect.left + targetRect.width / 2 : fallbackX;
     const baseY = targetRect ? targetRect.top + targetRect.height / 2 : fallbackY;
-    const stackDirection = destination === "timer" ? 1 : -1;
+    const stackDirection = destination === "timer" || destination === "hp" ? 1 : -1;
     const smallFan = (stackIndex % 2 === 0 ? -1 : 1) * Math.min(5, Math.floor(stackIndex / 2) * 2);
 
     return {
@@ -60,9 +61,10 @@
     window.setTimeout(() => {
       const target = findDestinationTarget(destination);
       if (!target) return;
-      target.classList.remove(destination === "timer" ? "ghost-timer-pulse" : "ghost-target-pulse");
+      const pulseClass = destination === "timer" ? "ghost-timer-pulse" : destination === "hp" ? "ghost-hp-pulse" : "ghost-target-pulse";
+      target.classList.remove(pulseClass);
       void target.offsetWidth;
-      target.classList.add(destination === "timer" ? "ghost-timer-pulse" : "ghost-target-pulse");
+      target.classList.add(pulseClass);
     }, delay);
   };
 
