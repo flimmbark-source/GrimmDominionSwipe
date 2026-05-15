@@ -1,6 +1,8 @@
-// Food system: each Food gives +5 to action rolls. At round end, lose 1 Food if any.
+// Food system: each Food gives +5 to action rolls. At round end, lose 1 old Food if any.
 (() => {
   const FOOD_ROLL_BONUS = 5;
+
+  game.hero.foodGainedThisRound ||= 0;
 
   const baseGetRollBonus = typeof getRollBonus === "function" ? getRollBonus : () => 0;
 
@@ -13,15 +15,33 @@
   };
   getRollBonus = window.getRollBonus;
 
+  const baseApplyRewards = typeof applyRewards === "function" ? applyRewards : null;
+  if (baseApplyRewards) {
+    window.applyRewards = function applyRewards(rewards = []) {
+      const gainedFood = rewards
+        .filter(reward => reward.type === "food" && reward.amount > 0)
+        .reduce((sum, reward) => sum + reward.amount, 0);
+      const result = baseApplyRewards(rewards);
+      if (gainedFood > 0) {
+        game.hero.foodGainedThisRound = (game.hero.foodGainedThisRound || 0) + gainedFood;
+      }
+      return result;
+    };
+    applyRewards = window.applyRewards;
+  }
+
   const baseResolveDarkLordPlan = typeof resolveDarkLordPlan === "function" ? resolveDarkLordPlan : null;
   if (baseResolveDarkLordPlan) {
     window.resolveDarkLordPlan = function resolveDarkLordPlan() {
       baseResolveDarkLordPlan();
-      if (game.hero.food > 0) {
+      const protectedFood = Math.max(0, game.hero.foodGainedThisRound || 0);
+      const oldFood = Math.max(0, (game.hero.food || 0) - protectedFood);
+      if (oldFood > 0) {
         game.hero.food = Math.max(0, game.hero.food - 1);
-        game.log.unshift("The Goblin eats 1 Food before the next round.");
+        game.log.unshift("The Goblin eats 1 old Food before the next round.");
         syncPartyHeroSummary?.();
       }
+      game.hero.foodGainedThisRound = 0;
     };
     resolveDarkLordPlan = window.resolveDarkLordPlan;
   }
