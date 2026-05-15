@@ -1,0 +1,15 @@
+/* During the result state, both action choices should leave the stage.
+   The selected action winks out; the unselected action simply disappears. */
+.gd-card:has(.gd-action-result) .gd-choice:not(.chosen),
+.gd-card:has(.gd-action-result) .gd-or {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.gd-card:has(.gd-action-result.ready) .gd-choice,
+.gd-card:has(.gd-action-result.ready) .gd-or {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
