@@ -76,7 +76,9 @@
     list.className = "gd-knowledge-list";
     list.innerHTML = earned.map(name => {
       const info = KNOWLEDGE[name];
-      return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><em>${info.icon} +${info.rollBonus}</em></div>`;
+      const turns = game?.hero?.knowledgeTurns?.[name];
+      const duration = turns ? `<strong class="gd-knowledge-duration">${turns}</strong>` : "";
+      return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><em>${info.icon} +${info.rollBonus}</em>${duration}</div>`;
     }).join("");
     statsPanel.appendChild(list);
   };
@@ -104,6 +106,7 @@
         game.hero.knowledge ||= [];
         knowledgeRewards.forEach(label => {
           if (!game.hero.knowledge.includes(label)) game.hero.knowledge.push(label);
+          if (typeof window.addTimedKnowledge === "function") window.addTimedKnowledge(label);
         });
       }
       return result;

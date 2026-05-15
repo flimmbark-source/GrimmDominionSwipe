@@ -57,6 +57,20 @@
   box-shadow: 0 0 8px #e2b64d24;
 }
 
+.gd-knowledge-duration {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid #3f4d35;
+  background: #050605;
+  color: var(--gd-green);
+  font-size: 10px;
+  line-height: 1;
+  box-shadow: 0 0 8px #78d78a24;
+}
+
 .ghost-timer-pulse {
   animation: gdGhostTimerPulse 900ms ease-out;
 }
@@ -132,6 +146,12 @@
     min-width: 32px;
     font-size: 10px;
     padding: 2px 5px;
+  }
+
+  .gd-knowledge-duration {
+    min-width: 19px;
+    height: 18px;
+    font-size: 9px;
   }
 
   .gd-choice-modifier-row {
