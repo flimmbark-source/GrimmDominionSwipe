@@ -114,7 +114,7 @@ body {
   margin: 0 14px !important;
   min-height: 0 !important;
   display: grid;
-  grid-template-rows: minmax(135px, 31dvh) auto;
+  grid-template-rows: minmax(190px, 40dvh) auto;
 }
 
 .gd-card-timer {
@@ -378,7 +378,7 @@ body {
   }
 
   .gd-card {
-    grid-template-rows: minmax(112px, 27dvh) auto;
+    grid-template-rows: minmax(152px, 36dvh) auto;
   }
 
   .gd-card-title {
