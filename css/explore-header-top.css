@@ -56,6 +56,11 @@
   margin-top: -2px !important;
 }
 
+/* The large in-card result button is now the only Explore result display. */
+.gd-main-scroll:has(.gd-card) > .gd-result-toast {
+  display: none !important;
+}
+
 @media (max-height: 700px) {
   .gd-main-scroll:has(.gd-card) > .gd-top.single-right {
     min-height: 52px;
