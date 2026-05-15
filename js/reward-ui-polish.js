@@ -1,5 +1,7 @@
 // Polishes reward-return presentation without changing the swipe interaction.
 (() => {
+  const ROLL_BONUS_PER_POINT = 5;
+
   const ICONS = {
     "Lockpick Set": "🗝",
     "Rope Hook": "🪝",
@@ -12,24 +14,24 @@
   };
 
   const KNOWLEDGE = {
-    "Inside": { icon: "⌂", tags: ["house", "entry"], statBonus: 1 },
-    "Shortcut": { icon: "↝", tags: ["route", "escape"], statBonus: 1 },
-    "Theft": { icon: "●", tags: ["theft"], statBonus: 1 },
-    "Clean Theft": { icon: "●", tags: ["theft", "lock", "quiet"], statBonus: 1 },
-    "Village Secrets": { icon: "✦", tags: ["food", "house", "search", "village"], statBonus: 1 },
-    "Scout Down": { icon: "⚔", tags: ["scout", "combat"], statBonus: 1 },
-    "Silent Kill": { icon: "☠", tags: ["combat", "scout", "stealth"], statBonus: 1 },
-    "Patience": { icon: "◉", tags: ["stealth", "hide", "patrol"], statBonus: 1 },
-    "High Path": { icon: "↟", tags: ["roof", "climb", "route"], statBonus: 1 },
-    "Blend In": { icon: "◒", tags: ["stealth", "crowd", "smoke", "hide"], statBonus: 1 },
-    "Escape Route": { icon: "↝", tags: ["route", "escape", "stealth"], statBonus: 1 },
-    "Secret Path": { icon: "✦", tags: ["route", "spirit", "magic"], statBonus: 1 },
-    "Marked Route": { icon: "↝", tags: ["route", "escape", "mark"], statBonus: 1 },
-    "Intimidate": { icon: "⚔", tags: ["combat", "intimidate", "lure"], statBonus: 1 },
-    "Broken Seal": { icon: "⛓", tags: ["magic", "spirit", "route", "escape"], statBonus: 1 },
-    "Trap Sense": { icon: "◉", tags: ["trap", "stealth", "hide"], statBonus: 1 },
-    "Trap Cut": { icon: "▣", tags: ["trap", "tool", "cunning"], statBonus: 1 },
-    "Resisted Curse": { icon: "✦", tags: ["spirit", "magic"], statBonus: 1 },
+    "Inside": { icon: "⌂", tags: ["house", "entry"], rollBonus: 5 },
+    "Shortcut": { icon: "↝", tags: ["route", "escape"], rollBonus: 5 },
+    "Theft": { icon: "●", tags: ["theft"], rollBonus: 5 },
+    "Clean Theft": { icon: "●", tags: ["theft", "lock", "quiet"], rollBonus: 5 },
+    "Village Secrets": { icon: "✦", tags: ["food", "house", "search", "village"], rollBonus: 5 },
+    "Scout Down": { icon: "⚔", tags: ["scout", "combat"], rollBonus: 5 },
+    "Silent Kill": { icon: "☠", tags: ["combat", "scout", "stealth"], rollBonus: 5 },
+    "Patience": { icon: "◉", tags: ["stealth", "hide", "patrol"], rollBonus: 5 },
+    "High Path": { icon: "↟", tags: ["roof", "climb", "route"], rollBonus: 5 },
+    "Blend In": { icon: "◒", tags: ["stealth", "crowd", "smoke", "hide"], rollBonus: 5 },
+    "Escape Route": { icon: "↝", tags: ["route", "escape", "stealth"], rollBonus: 5 },
+    "Secret Path": { icon: "✦", tags: ["route", "spirit", "magic"], rollBonus: 5 },
+    "Marked Route": { icon: "↝", tags: ["route", "escape", "mark"], rollBonus: 5 },
+    "Intimidate": { icon: "⚔", tags: ["combat", "intimidate", "lure"], rollBonus: 5 },
+    "Broken Seal": { icon: "⛓", tags: ["magic", "spirit", "route", "escape"], rollBonus: 5 },
+    "Trap Sense": { icon: "◉", tags: ["trap", "stealth", "hide"], rollBonus: 5 },
+    "Trap Cut": { icon: "▣", tags: ["trap", "tool", "cunning"], rollBonus: 5 },
+    "Resisted Curse": { icon: "✦", tags: ["spirit", "magic"], rollBonus: 5 },
   };
 
   const originalRender = window.render;
@@ -39,7 +41,9 @@
     if (typeof ITEM_BONUSES === "undefined") return;
     Object.entries(ITEM_BONUSES).forEach(([name, bonus]) => {
       bonus.icon = bonus.icon || ICONS[name] || "▣";
-      bonus.label = `${bonus.icon} +${bonus.statBonus}`;
+      bonus.rollBonus = typeof bonus.rollBonus === "number" ? bonus.rollBonus : (bonus.statBonus || 0) * ROLL_BONUS_PER_POINT;
+      delete bonus.statBonus;
+      bonus.label = `${bonus.icon} +${bonus.rollBonus}`;
     });
   };
 
@@ -54,7 +58,7 @@
         .map(([name, bonus]) => ({
           itemName: name,
           ...bonus,
-          label: `${bonus.icon} +${bonus.statBonus}`,
+          label: `${bonus.icon} +${bonus.rollBonus}`,
           source: "knowledge",
         }))
         .filter(bonus => bonus.tags.some(tag => choiceData.tags?.includes(tag)));
@@ -74,7 +78,7 @@
     list.className = "gd-knowledge-list";
     list.innerHTML = earned.map(name => {
       const info = KNOWLEDGE[name];
-      return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><em>${info.icon} +${info.statBonus}</em></div>`;
+      return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><em>${info.icon} +${info.rollBonus}</em></div>`;
     }).join("");
     statsPanel.appendChild(list);
   };
