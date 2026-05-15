@@ -9,6 +9,7 @@ const ART = {
 
 const STAT_ICONS = { stealth: "🕶", combat: "⚔", cunning: "👁", spirit: "✦", survival: "🐾" };
 const RESULT_ICONS = { failure: "☠", success: "◇", great: "♛" };
+const RESULT_READY_MS = 3380;
 const GHOST_META = {
   gold: { icon: "●", className: "gold" },
   damage: { icon: "♥", className: "damage" },
@@ -26,6 +27,7 @@ const initialGame = () => ({
   currentCardId: "scout_sniffs_path",
   pendingNextCardId: null,
   awaitingResultAck: false,
+  resultReady: false,
   lastAction: null,
   result: "Choose a path. The Scout is close enough to smell you.",
   partyHealth: 7,
@@ -138,6 +140,7 @@ const commandCards = [
 
 let game = initialGame();
 let intervalId = null;
+let resultReadyTimeoutId = null;
 
 function calculateThresholds(statValue, difficulty) {
   const advantage = statValue - difficulty;
@@ -171,6 +174,7 @@ function choose(side) {
   game.heroTimer = Math.max(0, game.heroTimer - choice.timeCost);
   const ghosts = applyOutcome(card.id, side, choice, outcome);
   game.awaitingResultAck = true;
+  game.resultReady = false;
   game.pendingNextCardId = nextCardId;
   game.lastAction = {
     side,
@@ -185,13 +189,27 @@ function choose(side) {
   game.result = `<strong>${formatOutcome(outcome.type)} · d100 ${outcome.roll}</strong><br>${choice.outcomes[outcome.type]}`;
   game.log.unshift(`${card.title}: ${formatOutcome(outcome.type)} on ${choice.label} (${outcome.roll}).`);
   render();
+  queueResultReady(ghosts.length);
+}
+
+function queueResultReady(ghostCount) {
+  if (resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+  const lastGhostDelay = Math.max(0, ghostCount - 1) * 130;
+  resultReadyTimeoutId = setTimeout(() => {
+    if (!game.awaitingResultAck) return;
+    game.resultReady = true;
+    render();
+  }, RESULT_READY_MS + lastGhostDelay);
 }
 
 function acknowledgeResult() {
-  if (!game.awaitingResultAck || !game.pendingNextCardId) return;
+  if (!game.awaitingResultAck || !game.pendingNextCardId || !game.resultReady) return;
+  if (resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+  resultReadyTimeoutId = null;
   game.currentCardId = game.pendingNextCardId;
   game.pendingNextCardId = null;
   game.awaitingResultAck = false;
+  game.resultReady = false;
   game.lastAction = null;
   game.result = "Choose your next path.";
   render();
@@ -243,10 +261,13 @@ function tick() {
   game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
 
   if (game.darkLordTimer === 0) {
+    if (resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+    resultReadyTimeoutId = null;
     resolveDarkLordPlan();
     game.darkLordTimer = 60;
     game.heroTimer = 40;
     game.awaitingResultAck = false;
+    game.resultReady = false;
     game.pendingNextCardId = null;
     game.lastAction = null;
     render();
@@ -285,7 +306,12 @@ function targetRegion(regionId) {
 }
 
 function setTab(tab) { game.activeTab = tab; render(); }
-function resetGame() { game = initialGame(); render(); }
+function resetGame() {
+  if (resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+  resultReadyTimeoutId = null;
+  game = initialGame();
+  render();
+}
 function startTimers() { if (intervalId) clearInterval(intervalId); intervalId = setInterval(tick, 1000); }
 
 function render() {
@@ -331,7 +357,9 @@ function renderGhostLayer() {
 function renderActionResult() {
   const action = game.lastAction;
   const label = formatOutcome(action.outcomeType);
-  return `<button class="gd-action-result ${action.outcomeType}" data-ack-result><div class="gd-roll-chip">d100<b>${action.roll}</b></div><div class="gd-result-icon">${RESULT_ICONS[action.outcomeType]}</div><div class="gd-result-copy"><div class="gd-result-heading">${label} · ${action.choiceLabel}</div><p>${action.text}</p><div class="gd-cooldown-pill">Tap to continue</div></div></button>`;
+  const readyClass = game.resultReady ? "ready" : "waiting";
+  const prompt = game.resultReady ? "Tap to continue" : "Resolving...";
+  return `<button class="gd-action-result ${action.outcomeType} ${readyClass}" data-ack-result ${game.resultReady ? "" : "disabled"}><div class="gd-roll-chip">d100<b>${action.roll}</b></div><div class="gd-result-icon">${RESULT_ICONS[action.outcomeType]}</div><div class="gd-result-copy"><div class="gd-result-heading">${label} · ${action.choiceLabel}</div><p>${action.text}</p><div class="gd-cooldown-pill">${prompt}</div></div></button>`;
 }
 
 function renderChoice(side, choice) {
