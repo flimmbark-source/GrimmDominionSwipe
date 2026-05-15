@@ -24,17 +24,33 @@
   100% { opacity: 0; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 8px) scale(.58); }
 }
 
+.gd-ghost-portal,
 .gd-ghost-handoff {
   position: fixed !important;
   bottom: auto !important;
   z-index: 9999 !important;
   pointer-events: none !important;
-  animation: gdGhostHandoffToTab 1100ms cubic-bezier(.2, .72, .2, 1) forwards !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 54px;
+  justify-content: center;
+  padding: 5px 8px;
+  border: 1px solid currentColor;
+  background: #050605e8;
+  color: var(--ghost-color, var(--gd-gold));
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: 0 0 16px color-mix(in srgb, currentColor 45%, transparent), inset 0 0 14px #000;
+  white-space: nowrap;
+  animation: gdGhostPortalToTab 2200ms cubic-bezier(.2, .72, .2, 1) forwards !important;
 }
 
-@keyframes gdGhostHandoffToTab {
-  0% { opacity: 1; transform: translate(-50%, 0) scale(.95); }
-  72% { opacity: 1; left: var(--handoff-target-x); top: var(--handoff-target-y); transform: translate(-50%, -50%) scale(.78); }
+@keyframes gdGhostPortalToTab {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  28% { opacity: 1; transform: translate(-50%, -32px) scale(1.04); }
+  82% { opacity: 1; left: var(--handoff-target-x); top: var(--handoff-target-y); transform: translate(-50%, -50%) scale(.82); }
+  92% { opacity: 1; left: var(--handoff-target-x); top: var(--handoff-target-y); transform: translate(-50%, -50%) scale(.76); }
   100% { opacity: 0; left: var(--handoff-target-x); top: var(--handoff-target-y); transform: translate(-50%, -45%) scale(.52); }
 }
 
