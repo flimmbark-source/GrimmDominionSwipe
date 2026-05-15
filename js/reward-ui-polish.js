@@ -12,11 +12,11 @@
   };
 
   const KNOWLEDGE = {
-    "Village Secrets": { icon: "✦", target: "Food routes", text: "Reveals safer places to scavenge." },
-    "Inside": { icon: "⌂", target: "House events", text: "You know the room layout now." },
-    "Patience": { icon: "◉", target: "Stealth choices", text: "Waiting pays off in patrol windows." },
-    "High Path": { icon: "↟", target: "Roof routes", text: "Rooftop movement feels familiar." },
-    "Marked Route": { icon: "↝", target: "Route cards", text: "You left signs the party can follow." },
+    "Village Secrets": { icon: "✦", effect: "Food events can reveal safer scavenging." },
+    "Inside": { icon: "⌂", effect: "House actions are easier to read." },
+    "Patience": { icon: "◉", effect: "Stealth choices show safer timing windows." },
+    "High Path": { icon: "↟", effect: "Rooftop routes are faster and safer." },
+    "Marked Route": { icon: "↝", effect: "Party can follow this route later." },
   };
 
   const originalRender = window.render;
@@ -41,7 +41,7 @@
     list.className = "gd-knowledge-list";
     list.innerHTML = earned.map(name => {
       const info = KNOWLEDGE[name];
-      return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><small>${info.target}</small></div>`;
+      return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><small>${info.effect}</small></div>`;
     }).join("");
     statsPanel.appendChild(list);
   };
