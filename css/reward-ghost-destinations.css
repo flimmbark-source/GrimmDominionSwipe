@@ -10,16 +10,18 @@
 .gd-reward-ghost.to-inventory,
 .gd-reward-ghost.to-log {
   animation-name: gdRewardGhostToTab !important;
-  animation-duration: 2500ms !important;
+  animation-duration: 3200ms !important;
+  animation-timing-function: cubic-bezier(.2, .72, .2, 1) !important;
   z-index: 130 !important;
 }
 
 @keyframes gdRewardGhostToTab {
   0% { opacity: 0; left: var(--ghost-x, 50%); bottom: var(--ghost-y, 126px); transform: translate(-50%, 18px) scale(.82); }
-  10% { opacity: 1; left: var(--ghost-x, 50%); bottom: var(--ghost-y, 126px); transform: translate(-50%, 0) scale(1.04); }
-  48% { opacity: .98; left: var(--ghost-x, 50%); bottom: calc(var(--ghost-y, 126px) + 34px); transform: translate(-50%, 0) scale(1); }
-  80% { opacity: .98; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 0) scale(.9); }
-  100% { opacity: 0; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 10px) scale(.72); }
+  9% { opacity: 1; left: var(--ghost-x, 50%); bottom: var(--ghost-y, 126px); transform: translate(-50%, 0) scale(1.04); }
+  38% { opacity: 1; left: var(--ghost-x, 50%); bottom: calc(var(--ghost-y, 126px) + 34px); transform: translate(-50%, 0) scale(1); }
+  82% { opacity: 1; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 0) scale(.9); }
+  90% { opacity: 1; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, -3px) scale(.82); }
+  100% { opacity: 0; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 8px) scale(.58); }
 }
 
 .gd-tab.ghost-target-pulse { animation: gdTabGhostPulse 850ms ease-out; }
