@@ -1,4 +1,6 @@
 (() => {
+  const FLOAT_BEFORE_TAB_FLIGHT_MS = 2000;
+
   const destinationForGhost = (ghost) => {
     const text = (ghost.textContent || "").toLowerCase();
     if (ghost.classList.contains("item") && text.includes("route")) return "explore";
@@ -70,7 +72,7 @@
       ghost.style.visibility = "hidden";
       pulseTab(destination, 2100);
       clone.addEventListener("animationend", () => clone.remove(), { once: true });
-    }, 930);
+    }, FLOAT_BEFORE_TAB_FLIGHT_MS);
   };
 
   const observer = new MutationObserver((mutations) => {
