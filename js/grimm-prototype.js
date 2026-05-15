@@ -21,9 +21,10 @@ const GHOST_META = {
   stat: { icon: "▲", className: "stat" },
   xp: { icon: "✦", className: "xp" },
   time: { icon: "⌛", className: "time" },
+  card: { icon: "▣", className: "item" },
 };
 
-const eventDeck = [
+const villageStartingDeck = [
   "village_house_window",
   "market_stall",
   "scout_sniffs_path",
@@ -37,9 +38,8 @@ const initialGame = () => ({
   activeTab: "explore",
   heroTimer: 40,
   darkLordTimer: 60,
-  deckIndex: 0,
   selectedCommand: null,
-  currentCardId: eventDeck[0],
+  currentCardId: villageStartingDeck[0],
   pendingNextCardId: null,
   awaitingResultAck: false,
   resultReady: false,
@@ -71,11 +71,20 @@ const initialGame = () => ({
     ],
   },
   regions: {
-    village: { id: "village", name: "Village", subtitle: "Every shutter hides a prize or a witness.", state: "Suspected", signals: ["noise"], pending: [] },
-    swamp: { id: "swamp", name: "Swamp", subtitle: "Black water clings to the roots.", state: "Corrupted", signals: ["corruption"], pending: [] },
-    shrine: { id: "shrine", name: "Forest Shrine", subtitle: "Old magic stirs beneath the stones.", state: "Hunted", signals: ["magic"], pending: [] },
-    road: { id: "road", name: "Old Road", subtitle: "The road remembers every footprint.", state: "Hero Revealed", signals: ["sighting"], pending: [] },
-    castle: { id: "castle", name: "Castle", subtitle: "The throne waits behind iron prayers.", state: "Quiet", signals: [], pending: [] },
+    village: {
+      id: "village",
+      name: "Village",
+      subtitle: "Every shutter hides a prize or a witness.",
+      state: "Suspected",
+      signals: ["noise"],
+      pending: [],
+      deck: [...villageStartingDeck],
+      deckIndex: 0,
+    },
+    swamp: { id: "swamp", name: "Swamp", subtitle: "Black water clings to the roots.", state: "Corrupted", signals: ["corruption"], pending: [], deck: [], deckIndex: 0 },
+    shrine: { id: "shrine", name: "Forest Shrine", subtitle: "Old magic stirs beneath the stones.", state: "Hunted", signals: ["magic"], pending: [], deck: [], deckIndex: 0 },
+    road: { id: "road", name: "Old Road", subtitle: "The road remembers every footprint.", state: "Hero Revealed", signals: ["sighting"], pending: [], deck: [], deckIndex: 0 },
+    castle: { id: "castle", name: "Castle", subtitle: "The throne waits behind iron prayers.", state: "Quiet", signals: [], pending: [], deck: [], deckIndex: 0 },
   },
   party: [
     { name: "Goblin Outlaw", region: "Village", status: "Hidden", resource: "Gold", value: 4 },
@@ -94,14 +103,14 @@ const cards = {
     text: "A family sleeps above a low window. Lamplight shows a pantry, a purse, and floorboards that might betray you.",
     choices: {
       left: choice("Sneak inside", "stealth", 3, 4, {
-        failure: result("A latch snaps. Someone bolts upright and screams.", [noise(), status("Revealed"), damage(1)]),
+        failure: result("A latch snaps. Someone bolts upright and screams.", [noise(), status("Revealed"), damage(1), regionCard("village", "angry_villager", "Angry Villager")]),
         success: result("You slide through the window and land beside the cold hearth.", [xp("Inside")], "inside_sleeping_house"),
         great: result("You enter without a whisper and spot the best hiding places.", [stat("stealth", 1), status("Hidden")], "inside_sleeping_house"),
       }),
       right: choice("Move along", "survival", 2, 2, {
         failure: result("You step through broken pottery in the alley.", [noise()]),
         success: result("You leave the house alone and keep your route clean.", [time(1)]),
-        great: result("You find a faster alley behind the house.", [time(2), xp("Shortcut")]),
+        great: result("You find a faster alley behind the house.", [time(2), xp("Shortcut"), regionCard("village", "quiet_alley", "Quiet Alley")]),
       }),
     },
   },
@@ -112,14 +121,14 @@ const cards = {
     text: "The house smells of bread, wet wool, and coin. A cupboard creaks. A child coughs upstairs.",
     choices: {
       left: choice("Rob the purse", "cunning", 3, 5, {
-        failure: result("Coins scatter across the floorboards like hail.", [noise(), gold(1), status("Revealed")]),
+        failure: result("Coins scatter across the floorboards like hail.", [noise(), gold(1), status("Revealed"), regionCard("village", "angry_villager", "Angry Villager")]),
         success: result("You lift the purse and leave the clasp hanging.", [gold(3), xp("Theft")]),
         great: result("You take the purse, a spare key, and your own shadow with you.", [gold(5), item("House Key"), stat("cunning", 1)]),
       }),
       right: choice("Take food", "survival", 2, 3, {
         failure: result("A jar breaks. You grab what you can as footsteps stir.", [food(1), noise()]),
         success: result("You pack bread and dried apples without waking anyone.", [food(2), heal(1)]),
-        great: result("You find smoked meat, herbs, and a quiet back door.", [food(3), item("Healing Herbs"), time(1)]),
+        great: result("You find smoked meat, herbs, and a quiet back door.", [food(3), item("Healing Herbs"), time(1), regionCard("village", "cellar_route", "Cellar Route")]),
       }),
     },
   },
@@ -130,14 +139,14 @@ const cards = {
     text: "A rain tarp hides a clutter of bottles, knives, charms, and turnips. The stall bell hangs dangerously low.",
     choices: {
       left: choice("Cut the cashbox", "cunning", 4, 5, {
-        failure: result("The bell clatters and the cashbox barely opens.", [gold(1), noise()]),
+        failure: result("The bell clatters and the cashbox barely opens.", [gold(1), noise(), regionCard("village", "angry_villager", "Angry Villager")]),
         success: result("The lock gives. Coins spill into your pouch.", [gold(4)]),
         great: result("You find the hidden till beneath the false bottom.", [gold(6), item("Silver Button"), xp("Clean Theft")]),
       }),
       right: choice("Search supplies", "survival", 3, 4, {
         failure: result("A rotten crate collapses under your claws.", [damage(1), food(1)]),
         success: result("You gather useful scraps and a meal.", [food(2), item("Torch Kit")]),
-        great: result("You find a perfect little climbing hook under the tarp.", [item("Rope Hook"), stat("survival", 1)]),
+        great: result("You find a perfect little climbing hook under the tarp.", [item("Rope Hook"), stat("survival", 1), regionCard("village", "old_rooftops", "Old Rooftops")]),
       }),
     },
   },
@@ -173,7 +182,7 @@ const cards = {
       right: choice("Read old ledger", "spirit", 3, 4, {
         failure: result("The words crawl in your head. You slam it shut too loudly.", [noise(), damage(1)]),
         success: result("You learn which families hide food for winter.", [xp("Village Secrets"), food(1)]),
-        great: result("You learn a forgotten route beneath the chapel stones.", [item("Secret Route"), time(2), stat("spirit", 1)]),
+        great: result("You learn a forgotten route beneath the chapel stones.", [regionCard("village", "secret_route", "Secret Route"), time(2), stat("spirit", 1)]),
       }),
     },
   },
@@ -186,7 +195,7 @@ const cards = {
       left: choice("Climb down", "survival", 4, 6, {
         failure: result("The rope burns your palms and drops you hard.", [damage(2)]),
         success: result("You climb down and recover a lost bundle.", [item("Lost Bundle"), food(1)]),
-        great: result("You descend and find a dry tunnel under the stones.", [item("Well Tunnel"), time(2), stat("survival", 1)]),
+        great: result("You descend and find a dry tunnel under the stones.", [regionCard("village", "well_tunnel", "Well Tunnel"), time(2), stat("survival", 1)]),
       }),
       right: choice("Fish with hook", "cunning", 3, 4, {
         failure: result("The hook rings against stone.", [noise()]),
@@ -227,11 +236,54 @@ const cards = {
       right: choice("Listen first", "stealth", 2, 3, {
         failure: result("Floorboards creak under your ear.", [noise()]),
         success: result("You hear patrols outside and choose a safer angle.", [status("Hidden"), xp("Patience")]),
-        great: result("You hear a hidden route through the cellar.", [item("Cellar Route"), time(2)]),
+        great: result("You hear a hidden route through the cellar.", [regionCard("village", "cellar_route", "Cellar Route"), time(2)]),
+      }),
+    },
+  },
+  cellar_route: routeCard("Cellar Route", "A cold passage runs beneath the cottage and away from the main patrol lanes.", "Use the route", "stealth", 2, 2, [status("Hidden"), time(2), xp("Escape Route")]),
+  secret_route: routeCard("Secret Route", "A forgotten chapel path slips between stone walls and old roots.", "Follow the marks", "spirit", 2, 3, [status("Hidden"), time(2), xp("Secret Path")]),
+  well_tunnel: routeCard("Well Tunnel", "A damp tunnel under the Village carries old water and older secrets.", "Crawl through", "survival", 3, 4, [status("Hidden"), time(3), food(1)]),
+  quiet_alley: routeCard("Quiet Alley", "A narrow alley hides your small footsteps from the street patrols.", "Slip through", "stealth", 2, 2, [status("Hidden"), time(1)]),
+  angry_villager: {
+    id: "angry_villager",
+    title: "Angry Villager",
+    art: ART.scout,
+    text: "A villager bursts into the lane with a lantern, a rake, and a very loud voice.",
+    choices: {
+      left: choice("Duck under the cart", "stealth", 3, 3, {
+        failure: result("The lantern catches your shadow.", [status("Revealed"), noise()]),
+        success: result("You vanish beneath the cart until they pass.", [status("Hidden")]),
+        great: result("You vanish and steal a dropped purse as they pass.", [status("Hidden"), gold(2)]),
+      }),
+      right: choice("Scare them off", "combat", 3, 4, {
+        failure: result("They hit you with the rake and keep shouting.", [damage(1), noise()]),
+        success: result("They run, but not quietly.", [noise(), xp("Intimidate")]),
+        great: result("They drop the lantern and flee in silence.", [item("Lantern"), xp("Intimidate")]),
       }),
     },
   },
 };
+
+function routeCard(title, text, label, statName, difficulty, timeCost, rewards) {
+  return {
+    id: title.toLowerCase().replaceAll(" ", "_"),
+    title,
+    art: ART.scout,
+    text,
+    choices: {
+      left: choice(label, statName, difficulty, timeCost, {
+        failure: result("The route betrays you and makes noise.", [noise()]),
+        success: result("The route works. You slip through cleanly.", rewards),
+        great: result("You master the route and make it faster for next time.", [...rewards, stat(statName, 1)]),
+      }),
+      right: choice("Mark it for later", "cunning", 2, 2, {
+        failure: result("Your mark is obvious to everyone.", [noise()]),
+        success: result("You mark the route and keep moving.", [xp("Marked Route")]),
+        great: result("You hide a perfect route mark for the party.", [xp("Marked Route"), time(1)]),
+      }),
+    },
+  };
+}
 
 function choice(label, stat, difficulty, timeCost, outcomes) { return { label, stat, difficulty, timeCost, outcomes }; }
 function result(text, rewards = [], nextCardId = null) { return { text, rewards, nextCardId }; }
@@ -245,6 +297,7 @@ function item(name) { return { type: "item", name }; }
 function stat(statName, amount) { return { type: "stat", statName, amount }; }
 function xp(label) { return { type: "xp", label }; }
 function time(amount) { return { type: "time", amount }; }
+function regionCard(regionId, cardId, label = cards[cardId]?.title || cardId) { return { type: "regionCard", regionId, cardId, label }; }
 
 let game = initialGame();
 let intervalId = null;
@@ -301,8 +354,10 @@ function choose(side) {
 }
 
 function drawNextCardId() {
-  game.deckIndex = (game.deckIndex + 1) % eventDeck.length;
-  return eventDeck[game.deckIndex];
+  const region = game.regions[game.hero.regionId];
+  const deck = region?.deck?.length ? region.deck : villageStartingDeck;
+  region.deckIndex = ((region.deckIndex ?? 0) + 1) % deck.length;
+  return deck[region.deckIndex];
 }
 
 function queueResultReady(ghostCount) {
@@ -364,6 +419,10 @@ function applyRewards(rewards = []) {
       if (!game.hero.inventory.includes(reward.name)) game.hero.inventory.push(reward.name);
       ghosts.push(ghost("item", reward.name));
     }
+    if (reward.type === "regionCard") {
+      addCardToRegionDeck(reward.regionId || game.hero.regionId, reward.cardId);
+      ghosts.push(ghost("card", reward.label || cards[reward.cardId]?.title || reward.cardId));
+    }
     if (reward.type === "stat") {
       game.hero.stats[reward.statName] = (game.hero.stats[reward.statName] || 0) + reward.amount;
       ghosts.push(ghost("stat", `+${reward.amount} ${titleCase(reward.statName)}`));
@@ -379,6 +438,16 @@ function applyRewards(rewards = []) {
   }
   syncPartyHeroSummary();
   return ghosts.length ? ghosts : [ghost("xp", "No Change")];
+}
+
+function addCardToRegionDeck(regionId, cardId) {
+  const region = game.regions[regionId];
+  if (!region || !cards[cardId]) return;
+  region.deck ||= [];
+  if (!region.deck.includes(cardId)) {
+    region.deck.push(cardId);
+    game.log.unshift(`${cards[cardId].title} added to ${region.name} deck.`);
+  }
 }
 
 function signed(value) { return value > 0 ? `+${value}` : `${value}`; }
@@ -436,6 +505,7 @@ function targetRegion(regionId) {
   game.darkLord.evilEnergy -= card.cost;
   game.darkLord.pending.push({ card, regionId });
   game.regions[regionId].pending = [...(game.regions[regionId].pending || []), card.title];
+  if (card.seedCardId) addCardToRegionDeck(regionId, card.seedCardId);
   game.log.unshift(`Dark Lord plans ${card.title} on ${game.regions[regionId].name}.`);
   game.selectedCommand = null;
   render();
@@ -544,8 +614,15 @@ function renderLog() {
   return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">☰</div><div class="gd-title">Log</div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section><section class="gd-panel"><div class="gd-section-title">Recent Events</div><div class="gd-log-list">${game.log.slice(0, 12).map(l => `<div class="gd-log-entry">${l}</div>`).join("")}</div><button class="gd-choice right" data-reset style="margin-top:14px;min-height:60px;width:100%"><div class="gd-choice-title">Reset Prototype</div></button></section></div>`;
 }
 
+const commandCards = [
+  { id: "send_scout", title: "Send Scout", cost: 2, icon: "👁", effect: "Seed Scout into a region.", seedCardId: "scout_sniffs_path" },
+  { id: "seal_road", title: "Seal the Road", cost: 3, icon: "⛓", effect: "Bury an exit. Add Sealed Road." },
+  { id: "dispatch_priest", title: "Dispatch Priest", cost: 4, icon: "☠", effect: "Seed Priest into a magic or suspected region." },
+  { id: "summon_ogre", title: "Summon Ogre", cost: 5, icon: "♜", effect: "Seed Ogre into a revealed region." },
+];
+
 function renderDarkLord() {
-  const regionNodes = Object.values(game.regions).map(region => `<div class="gd-region-node ${region.id === "castle" ? "castle" : region.id === "village" ? "village" : region.id === "swamp" ? "swamp" : region.id === "shrine" ? "shrine" : "road"}" data-region="${region.id}"><button><div class="name">${region.name}</div><div class="state">${region.state}</div><div class="signals">${signalIcons(region.signals)} ${region.pending?.length ? "◇ " + region.pending.join(" · ") : ""}</div></button></div>`).join("");
+  const regionNodes = Object.values(game.regions).map(region => `<div class="gd-region-node ${region.id === "castle" ? "castle" : region.id === "village" ? "village" : region.id === "swamp" ? "swamp" : region.id === "shrine" ? "shrine" : "road"}" data-region="${region.id}"><button><div class="name">${region.name}</div><div class="state">${region.state}</div><div class="signals">${signalIcons(region.signals)} ${region.deck?.length ? `▣ ${region.deck.length}` : ""} ${region.pending?.length ? "◇ " + region.pending.join(" · ") : ""}</div></button></div>`).join("");
   return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">☠</div><div><div class="gd-title">Dark Lord</div><div class="gd-subtitle">Evil Energy ${game.darkLord.evilEnergy}/${game.darkLord.maxEvilEnergy}</div></div></div>${timerRing(game.darkLordTimer, "dark", "Planning")}<div></div></section><section class="gd-dark-map"><div class="gd-map-path"></div>${regionNodes}</section><div class="gd-pending">${game.selectedCommand ? "Choose a region for " + commandCards.find(c => c.id === game.selectedCommand).title : "Tap a command, then tap a region. Cards cost Evil Energy, not time."}</div><section class="gd-command-tray">${commandCards.map(c => `<button class="gd-command-card ${game.selectedCommand === c.id ? "selected" : ""}" data-command="${c.id}"><div class="gd-energy-cost">${c.cost}</div><div style="font-size:28px">${c.icon}</div><div class="title">${c.title}</div><div class="effect">${c.effect}</div></button>`).join("")}</section></div>`;
 }
 
