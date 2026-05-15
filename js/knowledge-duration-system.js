@@ -36,14 +36,18 @@
   const addTimedKnowledge = (name) => {
     game.hero.knowledge ||= [];
     game.hero.knowledgeTurns ||= {};
+    game.hero.knowledgeAcquiredThisAction ||= [];
     if (!game.hero.knowledge.includes(name)) game.hero.knowledge.push(name);
+    if (!game.hero.knowledgeAcquiredThisAction.includes(name)) game.hero.knowledgeAcquiredThisAction.push(name);
     const duration = KNOWLEDGE_DURATIONS[name] || DEFAULT_KNOWLEDGE_DURATION;
     game.hero.knowledgeTurns[name] = Math.max(game.hero.knowledgeTurns[name] || 0, duration);
   };
 
-  const tickKnowledgeDurations = () => {
+  const tickKnowledgeDurations = (skipNames = []) => {
     ensureKnowledgeTurns();
+    const skip = new Set(skipNames);
     Object.keys(game.hero.knowledgeTurns).forEach(name => {
+      if (skip.has(name)) return;
       game.hero.knowledgeTurns[name] = Math.max(0, game.hero.knowledgeTurns[name] - 1);
       if (game.hero.knowledgeTurns[name] <= 0) delete game.hero.knowledgeTurns[name];
     });
@@ -65,10 +69,16 @@
   if (baseChoose) {
     window.choose = function choose(side) {
       const shouldTick = !game.awaitingResultAck && game.heroTimer > 0;
+      game.hero.knowledgeAcquiredThisAction = [];
       baseChoose(side);
       if (shouldTick && game.awaitingResultAck) {
-        tickKnowledgeDurations();
-        game.log.unshift("Hero modifiers tick down by 1 action.");
+        const protectedThisAction = [...(game.hero.knowledgeAcquiredThisAction || [])];
+        tickKnowledgeDurations(protectedThisAction);
+        game.hero.knowledgeAcquiredThisAction = [];
+        game.log.unshift(protectedThisAction.length
+          ? "Hero modifiers tick down by 1 action; newly gained modifiers are protected."
+          : "Hero modifiers tick down by 1 action."
+        );
         render?.();
       }
     };
