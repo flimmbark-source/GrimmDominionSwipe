@@ -54,7 +54,7 @@
   const tagIcons = (choiceData) => {
     const tags = [...new Set(choiceData.tags || [])].slice(0, 5);
     if (!tags.length) return "";
-    return `<div class="gd-choice-tag-icons">${tags.map(tag => `<span title="${tag}">${TAG_ICONS[tag] || "◇"}</span>`).join("")}</div>`;
+    return `<div class="gd-choice-tag-icons" aria-hidden="true">${tags.map(tag => `<span title="${tag}">${TAG_ICONS[tag] || "◇"}</span>`).join("")}</div>`;
   };
 
   window.renderChoice = function renderChoice(side, choiceData) {
@@ -67,7 +67,8 @@
     const chosen = game.lastAction?.side === side;
     const bonusClass = totalBonus > 0 ? "positive" : totalBonus < 0 ? "negative" : "neutral";
     const bonusChip = `<span class="gd-total-roll-bonus ${bonusClass}">${signed(totalBonus)}</span>`;
-    return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>${tagIcons(choiceData)}<div class="gd-choice-title">${choiceData.label}</div><div class="gd-choice-mid"><span>⌛ ${choiceData.timeCost}s</span>${bonusChip}</div><div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div></button>`;
+    const button = `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}><div class="gd-choice-title">${choiceData.label}</div><div class="gd-choice-mid"><span>⌛ ${choiceData.timeCost}s</span>${bonusChip}</div><div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div></button>`;
+    return `<div class="gd-choice-stack ${side}">${tagIcons(choiceData)}${button}</div>`;
   };
   renderChoice = window.renderChoice;
 
