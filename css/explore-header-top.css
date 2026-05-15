@@ -1,0 +1,76 @@
+/* Explore-only header tightening: put the Village/region identity at the top-left
+   while keeping the live Dark Lord timer visible at the top-right. */
+.gd-main-scroll:has(.gd-card) {
+  position: relative;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-top.single-right {
+  position: relative;
+  z-index: 3;
+  padding-top: 4px !important;
+  padding-bottom: 0 !important;
+  min-height: 58px;
+  pointer-events: none;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-top.single-right > div:last-child {
+  pointer-events: auto;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 78px;
+  z-index: 4;
+  padding: 4px 0 0 14px !important;
+  align-items: start !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  pointer-events: none;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header .gd-region-line {
+  gap: 8px !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header .gd-emblem {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header .gd-region-title {
+  margin-top: 0 !important;
+  font-size: 27px !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header .gd-subtitle {
+  max-width: 215px;
+  font-size: 12px !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header .gd-pill {
+  display: none !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-card {
+  margin-top: -2px !important;
+}
+
+/* The large in-card result button is now the only Explore result display. */
+.gd-main-scroll:has(.gd-card) > .gd-result-toast {
+  display: none !important;
+}
+
+@media (max-height: 700px) {
+  .gd-main-scroll:has(.gd-card) > .gd-top.single-right {
+    min-height: 52px;
+  }
+
+  .gd-main-scroll:has(.gd-card) > .gd-region-header {
+    top: 3px;
+  }
+
+  .gd-main-scroll:has(.gd-card) > .gd-region-header .gd-subtitle {
+    display: none;
+  }
+}

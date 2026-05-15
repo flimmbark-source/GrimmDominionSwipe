@@ -94,7 +94,7 @@
 @keyframes gdChoiceWinkOut {
   0% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 18px currentColor); }
   38% { opacity: 1; transform: scale(1.035); filter: brightness(1.7) drop-shadow(0 0 26px currentColor); }
-  100% { opacity: .18; transform: scale(.86); filter: blur(1px) saturate(.45); }
+  100% { opacity: 0; transform: scale(.7); filter: blur(3px) saturate(.25); visibility: hidden; }
 }
 
 .gd-ghost-layer {
@@ -144,6 +144,10 @@
 .gd-reward-ghost.noise { --ghost-color: #b78cff; }
 .gd-reward-ghost.item { --ghost-color: #71d5ff; }
 .gd-reward-ghost.xp { --ghost-color: #f3ec83; }
+.gd-reward-ghost.food { --ghost-color: #cf9f5a; }
+.gd-reward-ghost.heal { --ghost-color: #5ff08a; }
+.gd-reward-ghost.stat { --ghost-color: #88d8ff; }
+.gd-reward-ghost.time { --ghost-color: #f0df7a; }
 
 @keyframes gdRewardGhostRise {
   0% { opacity: 0; transform: translate(-50%, 18px) scale(.82); }
@@ -157,9 +161,10 @@
 .gd-card:has(.gd-action-result.ready) .gd-ghost-layer { display: none; }
 .gd-card:has(.gd-action-result.ready) .gd-choice.chosen.wink-out {
   animation: none;
-  opacity: .18;
-  transform: scale(.86);
-  filter: blur(1px) saturate(.45);
+  opacity: 0;
+  transform: scale(.7);
+  filter: blur(3px) saturate(.25);
+  visibility: hidden;
 }
 
 @media (max-height: 700px) {
