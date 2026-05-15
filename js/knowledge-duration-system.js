@@ -61,14 +61,18 @@
     applyRewards = window.applyRewards;
   }
 
-  const baseResolveDarkLordPlan = typeof resolveDarkLordPlan === "function" ? resolveDarkLordPlan : null;
-  if (baseResolveDarkLordPlan) {
-    window.resolveDarkLordPlan = function resolveDarkLordPlan() {
-      baseResolveDarkLordPlan();
-      tickKnowledgeDurations();
-      game.log.unshift("Hero modifiers tick down by 1 round.");
+  const baseChoose = typeof choose === "function" ? choose : null;
+  if (baseChoose) {
+    window.choose = function choose(side) {
+      const shouldTick = !game.awaitingResultAck && game.heroTimer > 0;
+      baseChoose(side);
+      if (shouldTick && game.awaitingResultAck) {
+        tickKnowledgeDurations();
+        game.log.unshift("Hero modifiers tick down by 1 action.");
+        render?.();
+      }
     };
-    resolveDarkLordPlan = window.resolveDarkLordPlan;
+    choose = window.choose;
   }
 
   const baseRender = typeof render === "function" ? render : null;
