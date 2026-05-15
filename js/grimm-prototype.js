@@ -276,7 +276,6 @@ function tick() {
 
   if (game.awaitingResultAck) return;
 
-  game.heroTimer = Math.max(0, game.heroTimer - 1);
   render();
 }
 
