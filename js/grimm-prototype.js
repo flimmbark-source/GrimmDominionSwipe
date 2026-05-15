@@ -15,12 +15,21 @@ const STAT_ICONS = {
   survival: "🐾",
 };
 
+const RESULT_ICONS = {
+  failure: "☠",
+  success: "◇",
+  great: "♛",
+};
+
 const initialGame = () => ({
   activeTab: "explore",
   heroTimer: 40,
   darkLordTimer: 60,
   selectedCommand: null,
   currentCardId: "scout_sniffs_path",
+  pendingNextCardId: null,
+  actionLockRemaining: 0,
+  lastAction: null,
   result: "Choose a path. The Scout is close enough to smell you.",
   partyHealth: 7,
   corruption: 8,
@@ -138,16 +147,35 @@ function rollOutcome(choice) {
 }
 
 function choose(side) {
-  if (game.heroTimer <= 0) return;
+  if (game.heroTimer <= 0 || game.actionLockRemaining > 0) return;
   const card = cards[game.currentCardId];
   const choice = card.choices[side];
   const outcome = rollOutcome(choice);
+  const nextCardId = game.currentCardId === "scout_sniffs_path" ? "locked_cottage" : "scout_sniffs_path";
   game.heroTimer = Math.max(0, game.heroTimer - choice.timeCost);
   applyOutcome(choice, outcome);
-  game.result = `<strong>${formatOutcome(outcome.type)} · Roll ${outcome.roll}</strong><br>${choice.outcomes[outcome.type]}`;
+  game.actionLockRemaining = 2;
+  game.pendingNextCardId = nextCardId;
+  game.lastAction = {
+    side,
+    choiceLabel: choice.label,
+    outcomeType: outcome.type,
+    roll: outcome.roll,
+    red: outcome.red,
+    green: outcome.green,
+    text: choice.outcomes[outcome.type],
+  };
+  game.result = `<strong>${formatOutcome(outcome.type)} · d100 ${outcome.roll}</strong><br>${choice.outcomes[outcome.type]}`;
   game.log.unshift(`${card.title}: ${formatOutcome(outcome.type)} on ${choice.label} (${outcome.roll}).`);
-  game.currentCardId = game.currentCardId === "scout_sniffs_path" ? "locked_cottage" : "scout_sniffs_path";
   render();
+}
+
+function advanceAfterCooldown() {
+  if (!game.pendingNextCardId) return;
+  game.currentCardId = game.pendingNextCardId;
+  game.pendingNextCardId = null;
+  game.actionLockRemaining = 0;
+  game.lastAction = null;
 }
 
 function applyOutcome(choice, outcome) {
@@ -158,11 +186,11 @@ function applyOutcome(choice, outcome) {
     if (!game.regions.village.signals.includes("sighting")) game.regions.village.signals.push("sighting");
   }
   if (outcome.type === "success") {
-    if (choice.label.includes("lock")) game.hero.resourceValue += 1;
+    if (choice.label.toLowerCase().includes("lock")) game.hero.resourceValue += 1;
     if (!game.regions.village.signals.includes("noise")) game.regions.village.signals.push("noise");
   }
   if (outcome.type === "great") {
-    if (choice.label.includes("lock")) game.hero.resourceValue += 2;
+    if (choice.label.toLowerCase().includes("lock")) game.hero.resourceValue += 2;
     if (choice.stat === "stealth") game.hero.status = "Hidden";
   }
 }
@@ -173,11 +201,19 @@ function formatOutcome(type) {
 
 function tick() {
   game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
-  game.heroTimer = Math.max(0, game.heroTimer - 1);
+  if (game.actionLockRemaining > 0) {
+    game.actionLockRemaining = Math.max(0, game.actionLockRemaining - 1);
+    if (game.actionLockRemaining === 0) advanceAfterCooldown();
+  } else {
+    game.heroTimer = Math.max(0, game.heroTimer - 1);
+  }
   if (game.darkLordTimer === 0) {
     resolveDarkLordPlan();
     game.darkLordTimer = 60;
     game.heroTimer = 40;
+    game.actionLockRemaining = 0;
+    game.pendingNextCardId = null;
+    game.lastAction = null;
   }
   render();
 }
@@ -259,7 +295,7 @@ function renderExplore() {
       <div class="gd-card-body">
         <div class="gd-card-title">${card.title}</div>
         <div class="gd-card-text">${card.text}</div>
-        <div class="gd-swipe-label">Swipe to Choose</div>
+        ${game.lastAction ? renderActionResult() : `<div class="gd-swipe-label">Swipe to Choose</div>`}
         <div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div>
       </div>
     </section>
@@ -268,9 +304,25 @@ function renderExplore() {
   </div>`;
 }
 
+function renderActionResult() {
+  const action = game.lastAction;
+  const label = formatOutcome(action.outcomeType);
+  return `<div class="gd-action-result ${action.outcomeType}">
+    <div class="gd-roll-chip">d100<b>${action.roll}</b></div>
+    <div class="gd-result-icon">${RESULT_ICONS[action.outcomeType]}</div>
+    <div class="gd-result-copy">
+      <div class="gd-result-heading">${label} · ${action.choiceLabel}</div>
+      <p>${action.text}</p>
+      <div class="gd-cooldown-pill">Next card in ${game.actionLockRemaining}s</div>
+    </div>
+  </div>`;
+}
+
 function renderChoice(side, choice) {
   const thresholds = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
-  return `<button class="gd-choice ${side}" data-choice="${side}" ${game.heroTimer <= 0 ? "disabled" : ""}>
+  const locked = game.heroTimer <= 0 || game.actionLockRemaining > 0;
+  const chosen = game.lastAction?.side === side;
+  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>
     <div class="gd-choice-title">${choice.label}</div>
     <div class="gd-choice-mid"><div class="gd-choice-icon"><span>${STAT_ICONS[choice.stat]}</span></div><span>⌛ ${choice.timeCost}s</span></div>
     <div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div>
