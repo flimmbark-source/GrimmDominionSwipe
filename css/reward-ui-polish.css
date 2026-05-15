@@ -61,16 +61,60 @@
   animation: gdGhostTimerPulse 900ms ease-out;
 }
 
+.ghost-hp-pulse {
+  animation: gdGhostHpPulse 900ms ease-out;
+}
+
 @keyframes gdGhostTimerPulse {
   0% { transform: translateX(-50%) scale(1); filter: none; }
   35% { transform: translateX(-50%) scale(1.08); filter: drop-shadow(0 0 14px #f0df7a); }
   100% { transform: translateX(-50%) scale(1); filter: none; }
 }
 
+@keyframes gdGhostHpPulse {
+  0% { transform: scale(1); filter: none; }
+  35% { transform: scale(1.08); filter: drop-shadow(0 0 14px #e46b6b); }
+  100% { transform: scale(1); filter: none; }
+}
+
 .gd-choice-modifier {
   min-width: 42px;
   text-align: center;
   font-size: 12px !important;
+}
+
+.gd-choice-modifier-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px 7px;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.gd-choice-modifier-row span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 3px 7px;
+  border: 1px solid #4f4630;
+  background: #050605c9;
+  color: var(--gd-gold);
+  font-size: 11px;
+  line-height: 1;
+  box-shadow: 0 0 8px #e2b64d24;
+}
+
+.gd-non-explore-timers {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-self: end;
+  gap: 8px;
+}
+
+.gd-non-explore-timers > div {
+  min-width: 52px;
 }
 
 @media (max-height: 700px) {
@@ -88,5 +132,15 @@
     min-width: 32px;
     font-size: 10px;
     padding: 2px 5px;
+  }
+
+  .gd-choice-modifier-row {
+    gap: 4px 5px;
+  }
+
+  .gd-choice-modifier-row span {
+    min-width: 36px;
+    padding: 2px 5px;
+    font-size: 10px;
   }
 }
