@@ -1,41 +1,33 @@
 // Replaces placeholder inventory presentation with live item-effect cards.
 (() => {
   const ITEM_DEFS = {
-    "Rusty Shiv": { icon: "⚔", tags: ["combat", "scout", "intimidate"], rollBonus: 5, slot: "Main" },
-    "Smoke Bomb": { icon: "◒", tags: ["stealth", "hide", "smoke", "escape"], rollBonus: 5, slot: "Tool" },
-    "Crow Coin": { icon: "●", tags: ["theft", "search", "market"], rollBonus: 5, slot: "Charm" },
-    "Lockpick Set": { icon: "🗝", tags: ["lock"], rollBonus: 10, slot: "Tool" },
-    "Rope Hook": { icon: "🪝", tags: ["climb", "roof", "escape", "well", "route"], rollBonus: 10, slot: "Tool" },
-    "Soot Cloak": { icon: "◒", tags: ["stealth", "smoke", "crowd", "hide"], rollBonus: 10, slot: "Body" },
-    "House Key": { icon: "🗝", tags: ["house", "cottage", "lock", "entry"], rollBonus: 10, slot: "Key" },
-    "Torch Kit": { icon: "🔥", tags: ["dark", "tunnel", "cellar", "well", "search"], rollBonus: 10, slot: "Tool" },
-    "Scout Horn": { icon: "♬", tags: ["scout", "intimidate", "lure"], rollBonus: 10, slot: "Trick" },
-    "Warding Charm": { icon: "✦", tags: ["spirit", "lore", "chapel", "magic"], rollBonus: 10, slot: "Charm" },
+    "Rusty Shiv": { icon: "⚔", tags: ["combat", "scout", "intimidate"], rollBonus: 4, slot: "Main" },
+    "Smoke Bomb": { icon: "◒", tags: ["stealth", "hide", "smoke", "escape"], rollBonus: 6, slot: "Tool" },
+    "Crow Coin": { icon: "●", tags: ["theft", "search", "market"], rollBonus: 3, slot: "Charm" },
+    "Lockpick Set": { icon: "🗝", tags: ["lock"], rollBonus: 8, slot: "Tool" },
+    "Rope Hook": { icon: "🪝", tags: ["climb", "roof", "escape", "well", "route"], rollBonus: 7, slot: "Tool" },
+    "Soot Cloak": { icon: "◒", tags: ["stealth", "smoke", "crowd", "hide"], rollBonus: 8, slot: "Body" },
+    "House Key": { icon: "🗝", tags: ["house", "cottage", "lock", "entry"], rollBonus: 9, slot: "Key" },
+    "Torch Kit": { icon: "🔥", tags: ["dark", "tunnel", "cellar", "well", "search"], rollBonus: 7, slot: "Tool" },
+    "Scout Horn": { icon: "♬", tags: ["scout", "intimidate", "lure"], rollBonus: 6, slot: "Trick" },
+    "Warding Charm": { icon: "✦", tags: ["spirit", "lore", "chapel", "magic"], rollBonus: 8, slot: "Charm" },
     "Lantern": { icon: "☼", tags: ["dark", "tunnel", "well", "search"], rollBonus: 5, slot: "Tool" },
-    "Healing Herbs": { icon: "✚", tags: ["food", "survival"], rollBonus: 5, slot: "Supply" },
-    "Silver Button": { icon: "●", tags: ["theft", "market"], rollBonus: 5, slot: "Trinket" },
+    "Healing Herbs": { icon: "✚", tags: ["food", "survival"], rollBonus: 4, slot: "Supply" },
+    "Silver Button": { icon: "●", tags: ["theft", "market"], rollBonus: 2, slot: "Trinket" },
     "Spare Lock": { icon: "▣", tags: ["lock", "trap", "tool"], rollBonus: 5, slot: "Tool" },
-    "Lost Bundle": { icon: "▣", tags: ["supplies", "search", "survival"], rollBonus: 5, slot: "Supply" },
-    "Snare Cord": { icon: "⌁", tags: ["trap", "tool", "lure"], rollBonus: 5, slot: "Tool" },
+    "Lost Bundle": { icon: "▣", tags: ["supplies", "search", "survival"], rollBonus: 3, slot: "Supply" },
+    "Snare Cord": { icon: "⌁", tags: ["trap", "tool", "lure"], rollBonus: 4, slot: "Tool" },
   };
-
-  const legacyToRollBonus = (value) => (value || 0) * 5;
 
   const ensureItemBonuses = () => {
     if (typeof ITEM_BONUSES === "undefined") return;
     Object.entries(ITEM_DEFS).forEach(([name, def]) => {
-      const existing = ITEM_BONUSES[name] || {};
-      const rollBonus = typeof existing.rollBonus === "number"
-        ? existing.rollBonus
-        : typeof existing.statBonus === "number"
-          ? legacyToRollBonus(existing.statBonus)
-          : def.rollBonus;
       ITEM_BONUSES[name] = {
-        ...existing,
+        ...(ITEM_BONUSES[name] || {}),
         tags: def.tags,
-        rollBonus,
+        rollBonus: def.rollBonus,
         icon: def.icon,
-        label: `${def.icon} +${rollBonus}`,
+        label: `${def.icon} +${def.rollBonus}`,
       };
       delete ITEM_BONUSES[name].statBonus;
     });
@@ -66,7 +58,7 @@
       <section class="gd-footer-chip"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name} <span class="gd-inline-hp">♥ ${game.partyHealth}/10</span></div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold ${game.hero.resourceValue}<br><b>Food ${game.hero.food}</b></div></section>
       <section class="gd-panel"><div class="gd-section-title">Equipped roll bonuses</div><div class="gd-inv-list">${equipped.map(renderItemCard).join("")}</div></section>
       <section class="gd-panel"><div class="gd-section-title">Bag roll bonuses</div><div class="gd-inv-list">${bag.length ? bag.map(renderItemCard).join("") : `<div class="gd-empty-note">No extra items yet.</div>`}</div></section>
-      <section class="gd-panel"><div class="gd-section-title">How items work</div><div class="gd-card-text">Items are passive. When a future choice has matching tags, its choice card shows the item icon and direct d100 bonus, like <b>🗝 +10</b>, and that amount is added to the roll.</div></section></div>`;
+      <section class="gd-panel"><div class="gd-section-title">How items work</div><div class="gd-card-text">Items are passive. When a future choice has matching tags, its choice card adds that item's d100 bonus into the single combined roll modifier.</div></section></div>`;
   };
 
   ensureItemBonuses();
