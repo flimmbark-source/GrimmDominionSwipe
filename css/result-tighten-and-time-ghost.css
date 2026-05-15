@@ -1,0 +1,82 @@
+/* Keep the result state from making the event card feel oversized. */
+.gd-card:has(.gd-action-result) .gd-action-result {
+  min-height: 82px !important;
+  max-height: 96px !important;
+  margin: 6px 0 4px !important;
+  padding: 7px 9px !important;
+  gap: 7px !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-roll-chip {
+  width: 46px !important;
+  min-height: 36px !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-roll-chip b {
+  font-size: 18px !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-result-icon {
+  font-size: 21px !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-result-copy p {
+  -webkit-line-clamp: 2 !important;
+  font-size: 11px !important;
+  line-height: 1.16 !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-result-heading {
+  font-size: 10px !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-cooldown-pill {
+  margin-top: 2px !important;
+  font-size: 9px !important;
+}
+
+/* Time-spend ghost originates from the player timer. */
+.gd-time-spend-ghost {
+  position: absolute;
+  left: 50%;
+  top: var(--time-ghost-top, calc(40dvh - 36px));
+  transform: translateX(-50%);
+  z-index: 9;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid #f0df7a;
+  background: #050605e8;
+  color: #f0df7a;
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: 0 0 16px #f0df7a55, inset 0 0 14px #000;
+  animation: gdTimeSpendGhost 1400ms ease-out forwards;
+  white-space: nowrap;
+}
+
+.gd-time-spend-ghost .ghost-icon {
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+@keyframes gdTimeSpendGhost {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(.82); }
+  14% { opacity: 1; transform: translate(-50%, -8px) scale(1.04); }
+  72% { opacity: .95; transform: translate(-50%, -34px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -58px) scale(.95); }
+}
+
+@media (max-height: 700px) {
+  .gd-card:has(.gd-action-result) .gd-action-result {
+    min-height: 72px !important;
+    max-height: 84px !important;
+  }
+
+  .gd-time-spend-ghost {
+    top: var(--time-ghost-top, calc(36dvh - 36px));
+    font-size: 11px;
+    padding: 4px 7px;
+  }
+}
