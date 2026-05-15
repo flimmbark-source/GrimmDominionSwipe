@@ -1,0 +1,30 @@
+/* Keep the event card the same outer size when a result is shown.
+   The result panel overlays the body instead of changing its layout height. */
+.gd-card:has(.gd-action-result) .gd-card-body {
+  position: relative;
+  min-height: 0 !important;
+}
+
+.gd-card:has(.gd-action-result) .gd-action-result {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 96px;
+  min-height: 78px;
+  max-height: 92px;
+  margin: 0 !important;
+  padding: 7px 9px;
+  z-index: 6;
+}
+
+.gd-card:has(.gd-action-result) .gd-choice-row {
+  visibility: hidden;
+}
+
+@media (max-height: 700px) {
+  .gd-card:has(.gd-action-result) .gd-action-result {
+    bottom: 86px;
+    min-height: 70px;
+    max-height: 82px;
+  }
+}
