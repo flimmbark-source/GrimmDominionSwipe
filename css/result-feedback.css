@@ -152,6 +152,16 @@
   100% { opacity: 0; transform: translate(-50%, -88px) scale(.96); }
 }
 
+/* The JS flips the result card to .ready after the ghost sequence. That causes one
+   final DOM render, so freeze/hide replayable animation elements in that ready state. */
+.gd-card:has(.gd-action-result.ready) .gd-ghost-layer { display: none; }
+.gd-card:has(.gd-action-result.ready) .gd-choice.chosen.wink-out {
+  animation: none;
+  opacity: .18;
+  transform: scale(.86);
+  filter: blur(1px) saturate(.45);
+}
+
 @media (max-height: 700px) {
   .gd-action-result { margin: 5px 0 4px; padding: 6px 8px; grid-template-columns: auto auto minmax(0, 1fr); }
   .gd-roll-chip { width: 46px; min-height: 36px; font-size: 8px; }
