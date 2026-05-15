@@ -12,11 +12,24 @@
   };
 
   const KNOWLEDGE = {
-    "Village Secrets": { icon: "✦", tags: ["food", "house", "search"], statBonus: 1, target: "Scavenge / search" },
-    "Inside": { icon: "⌂", tags: ["house", "entry"], statBonus: 1, target: "House actions" },
+    "Inside": { icon: "⌂", tags: ["house", "entry"], statBonus: 1, target: "House / entry" },
+    "Shortcut": { icon: "↝", tags: ["route", "escape"], statBonus: 1, target: "Route / escape" },
+    "Theft": { icon: "●", tags: ["theft"], statBonus: 1, target: "Theft" },
+    "Clean Theft": { icon: "●", tags: ["theft", "lock", "quiet"], statBonus: 1, target: "Quiet theft" },
+    "Village Secrets": { icon: "✦", tags: ["food", "house", "search", "village"], statBonus: 1, target: "Scavenge / search" },
+    "Scout Down": { icon: "⚔", tags: ["scout", "combat"], statBonus: 1, target: "Scout fights" },
+    "Silent Kill": { icon: "☠", tags: ["combat", "scout", "stealth"], statBonus: 1, target: "Silent takedowns" },
     "Patience": { icon: "◉", tags: ["stealth", "hide", "patrol"], statBonus: 1, target: "Stealth timing" },
     "High Path": { icon: "↟", tags: ["roof", "climb", "route"], statBonus: 1, target: "Rooftop routes" },
+    "Blend In": { icon: "◒", tags: ["stealth", "crowd", "smoke", "hide"], statBonus: 1, target: "Blend / hide" },
+    "Escape Route": { icon: "↝", tags: ["route", "escape", "stealth"], statBonus: 1, target: "Escape routes" },
+    "Secret Path": { icon: "✦", tags: ["route", "spirit", "magic"], statBonus: 1, target: "Secret routes" },
     "Marked Route": { icon: "↝", tags: ["route", "escape", "mark"], statBonus: 1, target: "Route / escape" },
+    "Intimidate": { icon: "⚔", tags: ["combat", "intimidate", "lure"], statBonus: 1, target: "Intimidate" },
+    "Broken Seal": { icon: "⛓", tags: ["magic", "spirit", "route", "escape"], statBonus: 1, target: "Seals / magic routes" },
+    "Trap Sense": { icon: "◉", tags: ["trap", "stealth", "hide"], statBonus: 1, target: "Trap avoidance" },
+    "Trap Cut": { icon: "▣", tags: ["trap", "tool", "cunning"], statBonus: 1, target: "Trap tools" },
+    "Resisted Curse": { icon: "✦", tags: ["spirit", "magic"], statBonus: 1, target: "Curses / magic" },
   };
 
   const originalRender = window.render;
