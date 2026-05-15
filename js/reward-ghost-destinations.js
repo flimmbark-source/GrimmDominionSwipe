@@ -10,9 +10,9 @@
     if (ghost.classList.contains("item")) return "inventory";
     if (ghost.classList.contains("gold")) return "inventory";
     if (ghost.classList.contains("food")) return "inventory";
+    if (ghost.classList.contains("time")) return "timer";
     if (ghost.classList.contains("stat")) return "hero";
     if (ghost.classList.contains("status")) return "hero";
-    if (ghost.classList.contains("time")) return "hero";
     if (ghost.classList.contains("xp")) return "hero";
     if (ghost.classList.contains("damage")) return "party";
     if (ghost.classList.contains("heal")) return "party";
@@ -28,20 +28,21 @@
     log: "Log",
   }[destination] || "Hero");
 
-  const findTab = (destination) => {
+  const findDestinationTarget = (destination) => {
+    if (destination === "timer") return document.querySelector(".gd-card-timer") || document.querySelector(".gd-timer:not(.red)");
     const label = tabForDestination(destination);
     return [...document.querySelectorAll(".gd-tab")].find((node) =>
       (node.textContent || "").includes(label)
     );
   };
 
-  const pulseTab = (destination, delay = 1850) => {
+  const pulseTarget = (destination, delay = 1850) => {
     window.setTimeout(() => {
-      const tab = findTab(destination);
-      if (!tab) return;
-      tab.classList.remove("ghost-target-pulse");
-      void tab.offsetWidth;
-      tab.classList.add("ghost-target-pulse");
+      const target = findDestinationTarget(destination);
+      if (!target) return;
+      target.classList.remove(destination === "timer" ? "ghost-timer-pulse" : "ghost-target-pulse");
+      void target.offsetWidth;
+      target.classList.add(destination === "timer" ? "ghost-timer-pulse" : "ghost-target-pulse");
     }, delay);
   };
 
@@ -55,8 +56,8 @@
       if (!ghost.isConnected) return;
       const rect = ghost.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return;
-      const tab = findTab(destination);
-      const tabRect = tab?.getBoundingClientRect();
+      const target = findDestinationTarget(destination);
+      const targetRect = target?.getBoundingClientRect();
       const clone = ghost.cloneNode(true);
 
       clone.className = ghost.className;
@@ -65,12 +66,12 @@
       clone.style.left = `${rect.left + rect.width / 2}px`;
       clone.style.top = `${rect.top}px`;
       clone.style.bottom = "auto";
-      clone.style.setProperty("--handoff-target-x", `${tabRect ? tabRect.left + tabRect.width / 2 : window.innerWidth / 2}px`);
-      clone.style.setProperty("--handoff-target-y", `${tabRect ? tabRect.top + tabRect.height / 2 : window.innerHeight - 32}px`);
+      clone.style.setProperty("--handoff-target-x", `${targetRect ? targetRect.left + targetRect.width / 2 : window.innerWidth / 2}px`);
+      clone.style.setProperty("--handoff-target-y", `${targetRect ? targetRect.top + targetRect.height / 2 : window.innerHeight - 32}px`);
 
       document.body.appendChild(clone);
       ghost.style.visibility = "hidden";
-      pulseTab(destination, 2100);
+      pulseTarget(destination, 2100);
       clone.addEventListener("animationend", () => clone.remove(), { once: true });
     }, FLOAT_BEFORE_TAB_FLIGHT_MS);
   };
