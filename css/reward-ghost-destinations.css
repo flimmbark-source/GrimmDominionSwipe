@@ -1,0 +1,30 @@
+.gd-reward-ghost.to-explore { --target-x: 10%; --target-bottom: -118px; }
+.gd-reward-ghost.to-hero { --target-x: 30%; --target-bottom: -118px; }
+.gd-reward-ghost.to-party { --target-x: 50%; --target-bottom: -118px; }
+.gd-reward-ghost.to-inventory { --target-x: 70%; --target-bottom: -118px; }
+.gd-reward-ghost.to-log { --target-x: 90%; --target-bottom: -118px; }
+
+.gd-reward-ghost.to-explore,
+.gd-reward-ghost.to-hero,
+.gd-reward-ghost.to-party,
+.gd-reward-ghost.to-inventory,
+.gd-reward-ghost.to-log {
+  animation-name: gdRewardGhostToTab !important;
+  animation-duration: 2500ms !important;
+  z-index: 130 !important;
+}
+
+@keyframes gdRewardGhostToTab {
+  0% { opacity: 0; left: var(--ghost-x, 50%); bottom: var(--ghost-y, 126px); transform: translate(-50%, 18px) scale(.82); }
+  10% { opacity: 1; left: var(--ghost-x, 50%); bottom: var(--ghost-y, 126px); transform: translate(-50%, 0) scale(1.04); }
+  48% { opacity: .98; left: var(--ghost-x, 50%); bottom: calc(var(--ghost-y, 126px) + 34px); transform: translate(-50%, 0) scale(1); }
+  80% { opacity: .98; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 0) scale(.9); }
+  100% { opacity: 0; left: var(--target-x, 50%); bottom: var(--target-bottom, -118px); transform: translate(-50%, 10px) scale(.72); }
+}
+
+.gd-tab.ghost-target-pulse { animation: gdTabGhostPulse 850ms ease-out; }
+@keyframes gdTabGhostPulse {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-3px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); }
+}
