@@ -14,35 +14,19 @@
   pointer-events: none !important;
 }
 
-/* Make the Explore event card claim the full available gameplay area. */
+/* Keep the card's normal structure. Just let it extend downward into the space
+   freed by removing the duplicate result toast and the collapsed choice row. */
 .gd-main-scroll:has(.gd-card) > .gd-card {
-  height: 100% !important;
-  min-height: 0 !important;
-  align-self: stretch !important;
-  display: grid !important;
-  grid-template-rows: minmax(0, 1fr) auto !important;
+  margin-bottom: -58px !important;
 }
 
-.gd-main-scroll:has(.gd-card) > .gd-card .gd-card-art {
-  min-height: 0 !important;
-  height: 100% !important;
-}
-
-.gd-main-scroll:has(.gd-card) > .gd-card .gd-card-body {
-  align-self: end !important;
-}
-
-/* When choices are gone, let the result panel claim that space instead of
-   leaving an empty choice row under it. */
 .gd-card:has(.gd-action-result) .gd-card-body {
-  display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  padding-bottom: 58px !important;
 }
 
 .gd-card:has(.gd-action-result) .gd-action-result {
-  align-self: stretch !important;
-  min-height: 132px !important;
   margin: 10px 0 0 !important;
+  min-height: 132px !important;
   grid-template-columns: auto auto minmax(0, 1fr) !important;
 }
 
@@ -72,6 +56,14 @@
 }
 
 @media (max-height: 700px) {
+  .gd-main-scroll:has(.gd-card) > .gd-card {
+    margin-bottom: -42px !important;
+  }
+
+  .gd-card:has(.gd-action-result) .gd-card-body {
+    padding-bottom: 42px !important;
+  }
+
   .gd-card:has(.gd-action-result) .gd-action-result {
     min-height: 104px !important;
     margin-top: 6px !important;
