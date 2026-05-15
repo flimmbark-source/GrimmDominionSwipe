@@ -53,7 +53,7 @@
 }
 
 .gd-main-scroll:has(.gd-card) > .gd-card {
-  margin-top: -2px !important;
+  margin-top: 6px !important;
 }
 
 /* The large in-card result button is now the only Explore result display. */
@@ -72,5 +72,9 @@
 
   .gd-main-scroll:has(.gd-card) > .gd-region-header .gd-subtitle {
     display: none;
+  }
+
+  .gd-main-scroll:has(.gd-card) > .gd-card {
+    margin-top: 4px !important;
   }
 }
