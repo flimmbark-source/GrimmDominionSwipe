@@ -101,8 +101,8 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  overflow: hidden;
-  z-index: 4;
+  overflow: visible;
+  z-index: 100;
 }
 
 .gd-reward-ghost {
@@ -126,6 +126,7 @@
   animation-delay: calc(780ms + var(--ghost-delay, 0ms));
   opacity: 0;
   white-space: nowrap;
+  z-index: 101;
 }
 
 .gd-reward-ghost .ghost-icon {
