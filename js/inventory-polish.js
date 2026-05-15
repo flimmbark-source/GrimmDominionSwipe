@@ -1,43 +1,52 @@
 // Replaces placeholder inventory presentation with live item-effect cards.
 (() => {
   const ITEM_DEFS = {
-    "Rusty Shiv": { icon: "⚔", tags: ["combat", "scout", "intimidate"], statBonus: 1, slot: "Main" },
-    "Smoke Bomb": { icon: "◒", tags: ["stealth", "hide", "smoke", "escape"], statBonus: 1, slot: "Tool" },
-    "Crow Coin": { icon: "●", tags: ["theft", "search", "market"], statBonus: 1, slot: "Charm" },
-    "Lockpick Set": { icon: "🗝", tags: ["lock"], statBonus: 2, slot: "Tool" },
-    "Rope Hook": { icon: "🪝", tags: ["climb", "roof", "escape", "well", "route"], statBonus: 2, slot: "Tool" },
-    "Soot Cloak": { icon: "◒", tags: ["stealth", "smoke", "crowd", "hide"], statBonus: 2, slot: "Body" },
-    "House Key": { icon: "🗝", tags: ["house", "cottage", "lock", "entry"], statBonus: 2, slot: "Key" },
-    "Torch Kit": { icon: "🔥", tags: ["dark", "tunnel", "cellar", "well", "search"], statBonus: 2, slot: "Tool" },
-    "Scout Horn": { icon: "♬", tags: ["scout", "intimidate", "lure"], statBonus: 2, slot: "Trick" },
-    "Warding Charm": { icon: "✦", tags: ["spirit", "lore", "chapel", "magic"], statBonus: 2, slot: "Charm" },
-    "Lantern": { icon: "☼", tags: ["dark", "tunnel", "well", "search"], statBonus: 1, slot: "Tool" },
-    "Healing Herbs": { icon: "✚", tags: ["food", "survival"], statBonus: 1, slot: "Supply" },
-    "Silver Button": { icon: "●", tags: ["theft", "market"], statBonus: 1, slot: "Trinket" },
-    "Spare Lock": { icon: "▣", tags: ["lock", "trap", "tool"], statBonus: 1, slot: "Tool" },
-    "Lost Bundle": { icon: "▣", tags: ["supplies", "search", "survival"], statBonus: 1, slot: "Supply" },
-    "Snare Cord": { icon: "⌁", tags: ["trap", "tool", "lure"], statBonus: 1, slot: "Tool" },
+    "Rusty Shiv": { icon: "⚔", tags: ["combat", "scout", "intimidate"], rollBonus: 5, slot: "Main" },
+    "Smoke Bomb": { icon: "◒", tags: ["stealth", "hide", "smoke", "escape"], rollBonus: 5, slot: "Tool" },
+    "Crow Coin": { icon: "●", tags: ["theft", "search", "market"], rollBonus: 5, slot: "Charm" },
+    "Lockpick Set": { icon: "🗝", tags: ["lock"], rollBonus: 10, slot: "Tool" },
+    "Rope Hook": { icon: "🪝", tags: ["climb", "roof", "escape", "well", "route"], rollBonus: 10, slot: "Tool" },
+    "Soot Cloak": { icon: "◒", tags: ["stealth", "smoke", "crowd", "hide"], rollBonus: 10, slot: "Body" },
+    "House Key": { icon: "🗝", tags: ["house", "cottage", "lock", "entry"], rollBonus: 10, slot: "Key" },
+    "Torch Kit": { icon: "🔥", tags: ["dark", "tunnel", "cellar", "well", "search"], rollBonus: 10, slot: "Tool" },
+    "Scout Horn": { icon: "♬", tags: ["scout", "intimidate", "lure"], rollBonus: 10, slot: "Trick" },
+    "Warding Charm": { icon: "✦", tags: ["spirit", "lore", "chapel", "magic"], rollBonus: 10, slot: "Charm" },
+    "Lantern": { icon: "☼", tags: ["dark", "tunnel", "well", "search"], rollBonus: 5, slot: "Tool" },
+    "Healing Herbs": { icon: "✚", tags: ["food", "survival"], rollBonus: 5, slot: "Supply" },
+    "Silver Button": { icon: "●", tags: ["theft", "market"], rollBonus: 5, slot: "Trinket" },
+    "Spare Lock": { icon: "▣", tags: ["lock", "trap", "tool"], rollBonus: 5, slot: "Tool" },
+    "Lost Bundle": { icon: "▣", tags: ["supplies", "search", "survival"], rollBonus: 5, slot: "Supply" },
+    "Snare Cord": { icon: "⌁", tags: ["trap", "tool", "lure"], rollBonus: 5, slot: "Tool" },
   };
+
+  const legacyToRollBonus = (value) => (value || 0) * 5;
 
   const ensureItemBonuses = () => {
     if (typeof ITEM_BONUSES === "undefined") return;
     Object.entries(ITEM_DEFS).forEach(([name, def]) => {
+      const existing = ITEM_BONUSES[name] || {};
+      const rollBonus = typeof existing.rollBonus === "number"
+        ? existing.rollBonus
+        : typeof existing.statBonus === "number"
+          ? legacyToRollBonus(existing.statBonus)
+          : def.rollBonus;
       ITEM_BONUSES[name] = {
-        ...(ITEM_BONUSES[name] || {}),
+        ...existing,
         tags: def.tags,
-        statBonus: ITEM_BONUSES[name]?.statBonus || def.statBonus,
+        rollBonus,
         icon: def.icon,
-        label: `${def.icon} +${ITEM_BONUSES[name]?.statBonus || def.statBonus}`,
+        label: `${def.icon} +${rollBonus}`,
       };
+      delete ITEM_BONUSES[name].statBonus;
     });
   };
 
   const iconForItem = (name) => ITEM_DEFS[name]?.icon || inventoryIcon?.(name) || "▣";
-  const defForItem = (name) => ITEM_DEFS[name] || { icon: iconForItem(name), tags: [], statBonus: 0, slot: "Item" };
+  const defForItem = (name) => ITEM_DEFS[name] || { icon: iconForItem(name), tags: [], rollBonus: 0, slot: "Item" };
 
   const renderItemCard = (name) => {
     const def = defForItem(name);
-    const bonus = ITEM_BONUSES?.[name]?.statBonus || def.statBonus || 0;
+    const bonus = ITEM_BONUSES?.[name]?.rollBonus || def.rollBonus || 0;
     const tags = ITEM_BONUSES?.[name]?.tags || def.tags || [];
     const chip = bonus > 0 ? `<em>${def.icon} +${bonus}</em>` : `<em class="muted">Held</em>`;
     const tagLine = tags.length
@@ -52,12 +61,12 @@
     const equippedNames = (game.hero.equipment || []).map(item => item.name);
     const equipped = [...new Set([...equippedNames].filter(name => inventory.includes(name) || ITEM_DEFS[name]))];
     const bag = inventory.filter(name => !equipped.includes(name));
-    const passiveCount = inventory.filter(name => (ITEM_BONUSES?.[name]?.statBonus || ITEM_DEFS[name]?.statBonus || 0) > 0).length;
-    return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">▣</div><div><div class="gd-title">Inventory</div><div class="gd-subtitle">${passiveCount} passive modifiers active</div></div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
+    const passiveCount = inventory.filter(name => (ITEM_BONUSES?.[name]?.rollBonus || ITEM_DEFS[name]?.rollBonus || 0) > 0).length;
+    return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">▣</div><div><div class="gd-title">Inventory</div><div class="gd-subtitle">${passiveCount} roll modifiers active</div></div></div>${timerRing(game.heroTimer)}<div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-footer-chip"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name} <span class="gd-inline-hp">♥ ${game.partyHealth}/10</span></div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold ${game.hero.resourceValue}<br><b>Food ${game.hero.food}</b></div></section>
-      <section class="gd-panel"><div class="gd-section-title">Equipped modifiers</div><div class="gd-inv-list">${equipped.map(renderItemCard).join("")}</div></section>
-      <section class="gd-panel"><div class="gd-section-title">Bag modifiers</div><div class="gd-inv-list">${bag.length ? bag.map(renderItemCard).join("") : `<div class="gd-empty-note">No extra items yet.</div>`}</div></section>
-      <section class="gd-panel"><div class="gd-section-title">How items work</div><div class="gd-card-text">Items are passive. When a future choice has matching tags, its choice card shows the item icon and bonus, like <b>🗝 +2</b>, and the odds use that bonus.</div></section></div>`;
+      <section class="gd-panel"><div class="gd-section-title">Equipped roll bonuses</div><div class="gd-inv-list">${equipped.map(renderItemCard).join("")}</div></section>
+      <section class="gd-panel"><div class="gd-section-title">Bag roll bonuses</div><div class="gd-inv-list">${bag.length ? bag.map(renderItemCard).join("") : `<div class="gd-empty-note">No extra items yet.</div>`}</div></section>
+      <section class="gd-panel"><div class="gd-section-title">How items work</div><div class="gd-card-text">Items are passive. When a future choice has matching tags, its choice card shows the item icon and direct d100 bonus, like <b>🗝 +10</b>, and that amount is added to the roll.</div></section></div>`;
   };
 
   ensureItemBonuses();
