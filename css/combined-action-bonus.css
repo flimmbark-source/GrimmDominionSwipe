@@ -1,0 +1,36 @@
+.gd-total-roll-bonus {
+  display: inline-grid;
+  place-items: center;
+  min-width: 40px;
+  padding: 3px 8px;
+  border: 1px solid #4f4630;
+  background: #050605d8;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: inset 0 0 10px #000;
+}
+
+.gd-total-roll-bonus.positive {
+  color: var(--gd-green);
+  border-color: #35553f;
+  box-shadow: inset 0 0 10px #000, 0 0 9px #78d78a24;
+}
+
+.gd-total-roll-bonus.negative {
+  color: #e87878;
+  border-color: #633636;
+  box-shadow: inset 0 0 10px #000, 0 0 9px #e8787824;
+}
+
+.gd-total-roll-bonus.neutral {
+  color: var(--gd-muted);
+}
+
+@media (max-height: 700px) {
+  .gd-total-roll-bonus {
+    min-width: 34px;
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+}
