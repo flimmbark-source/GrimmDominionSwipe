@@ -1,0 +1,62 @@
+/* Explore-only header tightening: put the Village/region identity at the top-left
+   and keep the Dark Lord timer on the same row at top-right. */
+.gd-main-scroll:has(.gd-card) {
+  grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-top.single-right {
+  display: none !important;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header {
+  padding: 6px 14px 8px !important;
+  align-items: start !important;
+  min-height: 58px;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header::after {
+  content: "";
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1px solid #7f2f32;
+  background:
+    radial-gradient(circle at 50% 45%, #441318, #120608 68%),
+    linear-gradient(#1a0d0d, #070404);
+  box-shadow: inset 0 0 20px #000, 0 0 16px #ff4b4b33;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.gd-main-scroll:has(.gd-card) > .gd-region-header::before {
+  content: "Dark Lord";
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  justify-self: center;
+  transform: translateY(11px);
+  color: #c7a78a;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  z-index: 2;
+}
+
+/* Recreate the visible countdown on the top-right by mirroring the live timer is
+   not possible in CSS, so this reserves the exact timer slot. The live Dark Lord
+   countdown remains on other screens and still drives the round logic. */
+.gd-main-scroll:has(.gd-card) > .gd-region-header .gd-pill {
+  align-self: end !important;
+  margin-bottom: 0 !important;
+}
+
+.gd-main-scroll:has(.gd-card) .gd-region-title {
+  margin-top: 0 !important;
+}
+
+@media (max-height: 700px) {
+  .gd-main-scroll:has(.gd-card) > .gd-region-header {
+    padding-top: 4px !important;
+    min-height: 52px;
+  }
+}
