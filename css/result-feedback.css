@@ -131,8 +131,8 @@
   font-size: 13px;
   line-height: 1;
   box-shadow: 0 0 16px color-mix(in srgb, currentColor 45%, transparent), inset 0 0 14px #000;
-  animation: gdRewardGhostRise 1650ms ease-out forwards;
-  animation-delay: var(--ghost-delay, 0ms);
+  animation: gdRewardGhostRise 3300ms ease-out forwards;
+  animation-delay: calc(780ms + var(--ghost-delay, 0ms));
   opacity: 0;
   white-space: nowrap;
 }
@@ -156,9 +156,9 @@
 
 @keyframes gdRewardGhostRise {
   0% { opacity: 0; transform: translate(-50%, 18px) scale(.82); }
-  14% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
-  72% { opacity: .92; }
-  100% { opacity: 0; transform: translate(-50%, -78px) scale(.96); }
+  8% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
+  72% { opacity: .96; transform: translate(-50%, -28px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -88px) scale(.96); }
 }
 
 @media (max-height: 700px) {
