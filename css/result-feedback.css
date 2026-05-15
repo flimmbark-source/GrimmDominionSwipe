@@ -1,0 +1,127 @@
+.gd-action-result {
+  margin: 8px 0 6px;
+  border: 1px solid #3a3223;
+  background: linear-gradient(135deg, #080a08dd, #10130ddd);
+  box-shadow: inset 0 0 22px #000, 0 0 18px #0008;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.gd-action-result::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, currentColor 0, transparent 42%);
+  opacity: .08;
+  pointer-events: none;
+}
+
+.gd-action-result.failure { color: var(--gd-red); border-color: #673133; }
+.gd-action-result.success { color: var(--gd-gold); border-color: #5c4a2c; }
+.gd-action-result.great { color: var(--gd-green); border-color: #3b6840; }
+
+.gd-roll-chip {
+  width: 56px;
+  min-height: 44px;
+  border: 1px solid #3b3325;
+  background: #060706;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  text-align: center;
+  color: var(--gd-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 9px;
+}
+
+.gd-roll-chip b {
+  color: var(--gd-cream);
+  font-size: 22px;
+  display: block;
+  margin-top: 3px;
+}
+
+.gd-result-icon {
+  font-size: 25px;
+  opacity: .86;
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.gd-result-copy {
+  min-width: 0;
+}
+
+.gd-result-heading {
+  color: currentColor;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: 11px;
+}
+
+.gd-result-copy p {
+  margin: 3px 0 0;
+  color: #d4c8aa;
+  font-size: 12px;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gd-cooldown-pill {
+  justify-self: start;
+  margin-top: 4px;
+  color: var(--gd-muted);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.gd-choice.locked {
+  opacity: .52;
+  filter: grayscale(.35);
+}
+
+.gd-choice.chosen {
+  opacity: 1;
+  filter: drop-shadow(0 0 16px currentColor);
+}
+
+@media (max-height: 700px) {
+  .gd-action-result {
+    margin: 5px 0 4px;
+    padding: 6px 8px;
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .gd-roll-chip {
+    width: 46px;
+    min-height: 36px;
+    font-size: 8px;
+  }
+
+  .gd-roll-chip b {
+    font-size: 18px;
+  }
+
+  .gd-result-icon {
+    font-size: 20px;
+  }
+
+  .gd-result-copy p {
+    display: none;
+  }
+
+  .gd-cooldown-pill {
+    margin-top: 2px;
+    font-size: 9px;
+  }
+}
