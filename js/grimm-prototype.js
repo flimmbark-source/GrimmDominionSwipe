@@ -146,9 +146,7 @@ function calculateThresholds(statValue, difficulty) {
   return { red, green };
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
+function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
 
 function rollOutcome(choice) {
   const { red, green } = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
@@ -239,13 +237,10 @@ function applyOutcome(cardId, side, choice, outcome) {
   return ghosts.length ? ghosts : [ghost(type === "failure" ? "damage" : "xp", formatOutcome(type))];
 }
 
-function formatOutcome(type) {
-  return type === "great" ? "Great Success" : type[0].toUpperCase() + type.slice(1);
-}
+function formatOutcome(type) { return type === "great" ? "Great Success" : type[0].toUpperCase() + type.slice(1); }
 
 function tick() {
   game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
-  if (!game.awaitingResultAck) game.heroTimer = Math.max(0, game.heroTimer - 1);
 
   if (game.darkLordTimer === 0) {
     resolveDarkLordPlan();
@@ -254,7 +249,13 @@ function tick() {
     game.awaitingResultAck = false;
     game.pendingNextCardId = null;
     game.lastAction = null;
+    render();
+    return;
   }
+
+  if (game.awaitingResultAck) return;
+
+  game.heroTimer = Math.max(0, game.heroTimer - 1);
   render();
 }
 
@@ -269,10 +270,7 @@ function resolveDarkLordPlan() {
   game.corruption = Math.min(20, game.corruption + 1);
 }
 
-function selectCommand(id) {
-  game.selectedCommand = game.selectedCommand === id ? null : id;
-  render();
-}
+function selectCommand(id) { game.selectedCommand = game.selectedCommand === id ? null : id; render(); }
 
 function targetRegion(regionId) {
   if (!game.selectedCommand) return;
@@ -286,20 +284,9 @@ function targetRegion(regionId) {
   render();
 }
 
-function setTab(tab) {
-  game.activeTab = tab;
-  render();
-}
-
-function resetGame() {
-  game = initialGame();
-  render();
-}
-
-function startTimers() {
-  if (intervalId) clearInterval(intervalId);
-  intervalId = setInterval(tick, 1000);
-}
+function setTab(tab) { game.activeTab = tab; render(); }
+function resetGame() { game = initialGame(); render(); }
+function startTimers() { if (intervalId) clearInterval(intervalId); intervalId = setInterval(tick, 1000); }
 
 function render() {
   const app = document.getElementById("app");
@@ -325,23 +312,9 @@ function renderExplore() {
   const region = game.regions[game.hero.regionId];
   return `<div class="gd-main-scroll">
     <section class="gd-top single-right"><div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
-    <section class="gd-region-header">
-      <div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-region-title">${region.name}</div><div class="gd-subtitle">${region.subtitle}</div></div></div>
-      <div class="gd-pill">◉ ${region.state}</div>
-    </section>
-    <section class="gd-card">
-      <div class="gd-timer gd-card-timer">${game.heroTimer}s</div>
-      ${renderGhostLayer()}
-      <div class="gd-card-art" style="background-image:url('${card.art}')"></div>
-      <div class="gd-card-body">
-        <div class="gd-card-title">${card.title}</div>
-        <div class="gd-card-text">${card.text}</div>
-        ${game.lastAction ? renderActionResult() : `<div class="gd-swipe-label">Swipe to Choose</div>`}
-        <div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div>
-      </div>
-    </section>
-    <div class="gd-result-toast">${game.result}</div>
-    ${renderHeroFooter()}
+    <section class="gd-region-header"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-region-title">${region.name}</div><div class="gd-subtitle">${region.subtitle}</div></div></div><div class="gd-pill">◉ ${region.state}</div></section>
+    <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body"><div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : `<div class="gd-swipe-label">Swipe to Choose</div>`}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
+    <div class="gd-result-toast">${game.result}</div>${renderHeroFooter()}
   </div>`;
 }
 
@@ -358,26 +331,14 @@ function renderGhostLayer() {
 function renderActionResult() {
   const action = game.lastAction;
   const label = formatOutcome(action.outcomeType);
-  return `<button class="gd-action-result ${action.outcomeType}" data-ack-result>
-    <div class="gd-roll-chip">d100<b>${action.roll}</b></div>
-    <div class="gd-result-icon">${RESULT_ICONS[action.outcomeType]}</div>
-    <div class="gd-result-copy">
-      <div class="gd-result-heading">${label} · ${action.choiceLabel}</div>
-      <p>${action.text}</p>
-      <div class="gd-cooldown-pill">Tap to continue</div>
-    </div>
-  </button>`;
+  return `<button class="gd-action-result ${action.outcomeType}" data-ack-result><div class="gd-roll-chip">d100<b>${action.roll}</b></div><div class="gd-result-icon">${RESULT_ICONS[action.outcomeType]}</div><div class="gd-result-copy"><div class="gd-result-heading">${label} · ${action.choiceLabel}</div><p>${action.text}</p><div class="gd-cooldown-pill">Tap to continue</div></div></button>`;
 }
 
 function renderChoice(side, choice) {
   const thresholds = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
   const locked = game.heroTimer <= 0 || game.awaitingResultAck;
   const chosen = game.lastAction?.side === side;
-  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>
-    <div class="gd-choice-title">${choice.label}</div>
-    <div class="gd-choice-mid"><div class="gd-choice-icon"><span>${STAT_ICONS[choice.stat]}</span></div><span>⌛ ${choice.timeCost}s</span></div>
-    <div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div>
-  </button>`;
+  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}><div class="gd-choice-title">${choice.label}</div><div class="gd-choice-mid"><div class="gd-choice-icon"><span>${STAT_ICONS[choice.stat]}</span></div><span>⌛ ${choice.timeCost}s</span></div><div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div></button>`;
 }
 
 function renderHeroFooter() {
@@ -408,9 +369,7 @@ function renderDarkLord() {
   return `<div class="gd-main-scroll"><section class="gd-top"><div class="gd-region-line"><div class="gd-emblem">☠</div><div><div class="gd-title">Dark Lord</div><div class="gd-subtitle">Evil Energy ${game.darkLord.evilEnergy}/${game.darkLord.maxEvilEnergy}</div></div></div>${timerRing(game.darkLordTimer, "dark", "Planning")}<div></div></section><section class="gd-dark-map"><div class="gd-map-path"></div>${regionNodes}</section><div class="gd-pending">${game.selectedCommand ? "Choose a region for " + commandCards.find(c => c.id === game.selectedCommand).title : "Tap a command, then tap a region. Cards cost Evil Energy, not time."}</div><section class="gd-command-tray">${commandCards.map(c => `<button class="gd-command-card ${game.selectedCommand === c.id ? "selected" : ""}" data-command="${c.id}"><div class="gd-energy-cost">${c.cost}</div><div style="font-size:28px">${c.icon}</div><div class="title">${c.title}</div><div class="effect">${c.effect}</div></button>`).join("")}</section></div>`;
 }
 
-function signalIcons(signals = []) {
-  return signals.map(s => ({ noise: "〰", magic: "✦", sighting: "◉", corruption: "☠" }[s] || "◇")).join(" ");
-}
+function signalIcons(signals = []) { return signals.map(s => ({ noise: "〰", magic: "✦", sighting: "◉", corruption: "☠" }[s] || "◇")).join(" "); }
 
 function renderTabs() {
   const tabs = game.activeTab === "darklord" ? [["darklord", "✥", "Map"], ["explore", "▣", "Hero View"], ["log", "☰", "Log"]] : [["explore", "✥", "Explore"], ["hero", "⛑", "Hero"], ["party", "♟", "Party"], ["inventory", "▣", "Inventory"], ["log", "☰", "Log"]];
