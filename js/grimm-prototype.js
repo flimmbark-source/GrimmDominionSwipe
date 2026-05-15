@@ -24,6 +24,10 @@ const GHOST_META = {
   card: { icon: "▣", className: "item" },
 };
 
+const ITEM_BONUSES = {
+  "Lockpick Set": { tags: ["lock"], statBonus: 2, label: "🗝 Lockpick Set helps" },
+};
+
 const villageStartingDeck = [
   "village_house_window",
   "market_stall",
@@ -106,12 +110,12 @@ const cards = {
         failure: result("A latch snaps. Someone bolts upright and screams.", [noise(), status("Revealed"), damage(1), regionCard("village", "angry_villager", "Angry Villager")]),
         success: result("You slide through the window and land beside the cold hearth.", [xp("Inside")], "inside_sleeping_house"),
         great: result("You enter without a whisper and spot the best hiding places.", [stat("stealth", 1), status("Hidden")], "inside_sleeping_house"),
-      }),
+      }, ["stealth", "house", "entry"]),
       right: choice("Move along", "survival", 2, 2, {
         failure: result("You step through broken pottery in the alley.", [noise()]),
         success: result("You leave the house alone and keep your route clean.", [time(1)]),
         great: result("You find a faster alley behind the house.", [time(2), xp("Shortcut"), regionCard("village", "quiet_alley", "Quiet Alley")]),
-      }),
+      }, ["route", "escape"]),
     },
   },
   inside_sleeping_house: {
@@ -124,12 +128,12 @@ const cards = {
         failure: result("Coins scatter across the floorboards like hail.", [noise(), gold(1), status("Revealed"), regionCard("village", "angry_villager", "Angry Villager")]),
         success: result("You lift the purse and leave the clasp hanging.", [gold(3), xp("Theft")]),
         great: result("You take the purse, a spare key, and your own shadow with you.", [gold(5), item("House Key"), stat("cunning", 1)]),
-      }),
+      }, ["theft", "house"]),
       right: choice("Take food", "survival", 2, 3, {
         failure: result("A jar breaks. You grab what you can as footsteps stir.", [food(1), noise()]),
         success: result("You pack bread and dried apples without waking anyone.", [food(2), heal(1)]),
         great: result("You find smoked meat, herbs, and a quiet back door.", [food(3), item("Healing Herbs"), time(1), regionCard("village", "cellar_route", "Cellar Route")]),
-      }),
+      }, ["food", "house", "survival"]),
     },
   },
   market_stall: {
@@ -142,12 +146,12 @@ const cards = {
         failure: result("The bell clatters and the cashbox barely opens.", [gold(1), noise(), regionCard("village", "angry_villager", "Angry Villager")]),
         success: result("The lock gives. Coins spill into your pouch.", [gold(4)]),
         great: result("You find the hidden till beneath the false bottom.", [gold(6), item("Silver Button"), xp("Clean Theft")]),
-      }),
+      }, ["lock", "theft", "market"]),
       right: choice("Search supplies", "survival", 3, 4, {
         failure: result("A rotten crate collapses under your claws.", [damage(1), food(1)]),
         success: result("You gather useful scraps and a meal.", [food(2), item("Torch Kit")]),
         great: result("You find a perfect little climbing hook under the tarp.", [item("Rope Hook"), stat("survival", 1), regionCard("village", "old_rooftops", "Old Rooftops")]),
-      }),
+      }, ["supplies", "tool"]),
     },
   },
   scout_sniffs_path: {
@@ -160,12 +164,12 @@ const cards = {
         failure: result("The Scout howls. You are marked in the Village.", [status("Revealed"), noise()]),
         success: result("You hide, but the Scout keeps sniffing nearby.", [status("Hidden")]),
         great: result("You slip past cleanly and learn its patrol rhythm.", [status("Hidden"), stat("stealth", 1)]),
-      }),
+      }, ["stealth", "hide", "patrol"]),
       right: choice("Kill it before it howls", "combat", 4, 6, {
         failure: result("The Scout claws you and gets a howl out.", [damage(1), status("Revealed"), noise()]),
         success: result("You kill it, but the scuffle makes Noise.", [xp("Scout Down"), noise()]),
         great: result("You kill the Scout silently and pocket its horn.", [item("Scout Horn"), xp("Silent Kill")]),
-      }),
+      }, ["combat", "scout"]),
     },
   },
   chapel_backroom: {
@@ -178,12 +182,12 @@ const cards = {
         failure: result("The box groans like a dying crow.", [noise(), damage(1)]),
         success: result("You pry out a handful of offerings.", [gold(3)]),
         great: result("You find coins and a warding charm hidden inside.", [gold(4), item("Warding Charm"), stat("spirit", 1)]),
-      }),
+      }, ["lock", "theft", "chapel"]),
       right: choice("Read old ledger", "spirit", 3, 4, {
         failure: result("The words crawl in your head. You slam it shut too loudly.", [noise(), damage(1)]),
         success: result("You learn which families hide food for winter.", [xp("Village Secrets"), food(1)]),
         great: result("You learn a forgotten route beneath the chapel stones.", [regionCard("village", "secret_route", "Secret Route"), time(2), stat("spirit", 1)]),
-      }),
+      }, ["lore", "route", "chapel"]),
     },
   },
   well_bucket: {
@@ -196,12 +200,12 @@ const cards = {
         failure: result("The rope burns your palms and drops you hard.", [damage(2)]),
         success: result("You climb down and recover a lost bundle.", [item("Lost Bundle"), food(1)]),
         great: result("You descend and find a dry tunnel under the stones.", [regionCard("village", "well_tunnel", "Well Tunnel"), time(2), stat("survival", 1)]),
-      }),
+      }, ["climb", "well", "dark"]),
       right: choice("Fish with hook", "cunning", 3, 4, {
         failure: result("The hook rings against stone.", [noise()]),
         success: result("You pull up a wrapped coin roll.", [gold(2)]),
         great: result("You pull up coins and a lockpick kit.", [gold(2), item("Lockpick Set"), stat("cunning", 1)]),
-      }),
+      }, ["tool", "well"]),
     },
   },
   old_rooftops: {
@@ -214,12 +218,12 @@ const cards = {
         failure: result("Tiles slide. You crash through a chicken coop.", [damage(1), noise()]),
         success: result("You cross the roofs and save time.", [time(2), xp("High Path")]),
         great: result("You master the roofline and mark a perfect escape path.", [time(3), stat("survival", 1), status("Hidden")]),
-      }),
+      }, ["climb", "roof", "escape"]),
       right: choice("Shadow a chimney sweep", "stealth", 3, 4, {
         failure: result("The sweep spots you and shrieks.", [status("Revealed"), noise()]),
         success: result("You follow his route and avoid patrols.", [status("Hidden"), xp("Blend In")]),
         great: result("You steal his soot cloak and vanish into the smoke.", [item("Soot Cloak"), stat("stealth", 1)]),
-      }),
+      }, ["stealth", "smoke", "crowd"]),
     },
   },
   locked_cottage: {
@@ -232,12 +236,12 @@ const cards = {
         failure: result("The lock snaps loudly. You still grab a loose coin.", [gold(1), noise()]),
         success: result("You pry it open and find a hidden purse.", [gold(2)]),
         great: result("You empty the hiding place quietly and keep the lock intact.", [gold(3), item("Spare Lock"), stat("cunning", 1)]),
-      }),
+      }, ["lock", "theft", "cottage"]),
       right: choice("Listen first", "stealth", 2, 3, {
         failure: result("Floorboards creak under your ear.", [noise()]),
         success: result("You hear patrols outside and choose a safer angle.", [status("Hidden"), xp("Patience")]),
         great: result("You hear a hidden route through the cellar.", [regionCard("village", "cellar_route", "Cellar Route"), time(2)]),
-      }),
+      }, ["stealth", "house", "route"]),
     },
   },
   cellar_route: routeCard("Cellar Route", "A cold passage runs beneath the cottage and away from the main patrol lanes.", "Use the route", "stealth", 2, 2, [status("Hidden"), time(2), xp("Escape Route")]),
@@ -247,6 +251,7 @@ const cards = {
   angry_villager: {
     id: "angry_villager",
     title: "Angry Villager",
+    badge: "Consequence Card",
     art: ART.scout,
     text: "A villager bursts into the lane with a lantern, a rake, and a very loud voice.",
     choices: {
@@ -254,12 +259,12 @@ const cards = {
         failure: result("The lantern catches your shadow.", [status("Revealed"), noise()]),
         success: result("You vanish beneath the cart until they pass.", [status("Hidden")]),
         great: result("You vanish and steal a dropped purse as they pass.", [status("Hidden"), gold(2)]),
-      }),
+      }, ["stealth", "hide"]),
       right: choice("Scare them off", "combat", 3, 4, {
         failure: result("They hit you with the rake and keep shouting.", [damage(1), noise()]),
         success: result("They run, but not quietly.", [noise(), xp("Intimidate")]),
         great: result("They drop the lantern and flee in silence.", [item("Lantern"), xp("Intimidate")]),
-      }),
+      }, ["combat", "intimidate"]),
     },
   },
 };
@@ -268,6 +273,7 @@ function routeCard(title, text, label, statName, difficulty, timeCost, rewards) 
   return {
     id: title.toLowerCase().replaceAll(" ", "_"),
     title,
+    badge: "Discovered Route",
     art: ART.scout,
     text,
     choices: {
@@ -275,17 +281,17 @@ function routeCard(title, text, label, statName, difficulty, timeCost, rewards) 
         failure: result("The route betrays you and makes noise.", [noise()]),
         success: result("The route works. You slip through cleanly.", rewards),
         great: result("You master the route and make it faster for next time.", [...rewards, stat(statName, 1)]),
-      }),
+      }, ["route", "escape", statName]),
       right: choice("Mark it for later", "cunning", 2, 2, {
         failure: result("Your mark is obvious to everyone.", [noise()]),
         success: result("You mark the route and keep moving.", [xp("Marked Route")]),
         great: result("You hide a perfect route mark for the party.", [xp("Marked Route"), time(1)]),
-      }),
+      }, ["route", "mark"]),
     },
   };
 }
 
-function choice(label, stat, difficulty, timeCost, outcomes) { return { label, stat, difficulty, timeCost, outcomes }; }
+function choice(label, stat, difficulty, timeCost, outcomes, tags = []) { return { label, stat, difficulty, timeCost, outcomes, tags }; }
 function result(text, rewards = [], nextCardId = null) { return { text, rewards, nextCardId }; }
 function gold(amount) { return { type: "gold", amount }; }
 function food(amount) { return { type: "food", amount }; }
@@ -312,8 +318,21 @@ function calculateThresholds(statValue, difficulty) {
 
 function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
 
+function getChoiceModifiers(choiceData) {
+  return Object.entries(ITEM_BONUSES)
+    .filter(([itemName]) => game.hero.inventory.includes(itemName))
+    .map(([itemName, bonus]) => ({ itemName, ...bonus }))
+    .filter(bonus => bonus.tags.some(tag => choiceData.tags?.includes(tag)));
+}
+
+function getEffectiveStat(choiceData) {
+  const base = game.hero.stats[choiceData.stat] || 0;
+  const bonus = getChoiceModifiers(choiceData).reduce((sum, item) => sum + item.statBonus, 0);
+  return base + bonus;
+}
+
 function rollOutcome(choice) {
-  const { red, green } = calculateThresholds(game.hero.stats[choice.stat], choice.difficulty);
+  const { red, green } = calculateThresholds(getEffectiveStat(choice), choice.difficulty);
   const roll = Math.floor(Math.random() * 100) + 1;
   if (roll <= red) return { type: "failure", roll, red, green };
   if (roll > green) return { type: "great", roll, red, green };
@@ -421,11 +440,13 @@ function applyRewards(rewards = []) {
     }
     if (reward.type === "regionCard") {
       addCardToRegionDeck(reward.regionId || game.hero.regionId, reward.cardId);
-      ghosts.push(ghost("card", reward.label || cards[reward.cardId]?.title || reward.cardId));
+      ghosts.push(ghost("card", `${reward.label || cards[reward.cardId]?.title || reward.cardId} added`));
     }
     if (reward.type === "stat") {
-      game.hero.stats[reward.statName] = (game.hero.stats[reward.statName] || 0) + reward.amount;
-      ghosts.push(ghost("stat", `+${reward.amount} ${titleCase(reward.statName)}`));
+      const oldValue = game.hero.stats[reward.statName] || 0;
+      const newValue = oldValue + reward.amount;
+      game.hero.stats[reward.statName] = newValue;
+      ghosts.push(ghost("stat", `${titleCase(reward.statName)} ${oldValue}→${newValue}`));
     }
     if (reward.type === "xp") {
       game.hero.xp += 1;
@@ -542,10 +563,11 @@ function timerRing(value, variant = "hero", label = "") {
 function renderExplore() {
   const card = cards[game.currentCardId];
   const region = game.regions[game.hero.regionId];
+  const badge = card.badge ? `<div class="gd-card-badge">${card.badge}</div>` : "";
   return `<div class="gd-main-scroll">
     <section class="gd-top single-right"><div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
     <section class="gd-region-header"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-region-title">${region.name}</div><div class="gd-subtitle">${region.subtitle}</div></div></div><div class="gd-pill">◉ ${region.state}</div></section>
-    <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body"><div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : `<div class="gd-swipe-label">Swipe to Choose</div>`}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
+    <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : `<div class="gd-swipe-label">Swipe to Choose</div>`}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
     <div class="gd-result-toast">${game.result}</div>${renderHeroFooter()}
   </div>`;
 }
@@ -569,10 +591,13 @@ function renderActionResult() {
 }
 
 function renderChoice(side, choiceData) {
-  const thresholds = calculateThresholds(game.hero.stats[choiceData.stat], choiceData.difficulty);
+  const effectiveStat = getEffectiveStat(choiceData);
+  const thresholds = calculateThresholds(effectiveStat, choiceData.difficulty);
+  const modifiers = getChoiceModifiers(choiceData);
   const locked = game.heroTimer <= 0 || game.awaitingResultAck;
   const chosen = game.lastAction?.side === side;
-  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}><div class="gd-choice-title">${choiceData.label}</div><div class="gd-choice-mid"><div class="gd-choice-icon"><span>${STAT_ICONS[choiceData.stat]}</span></div><span>⌛ ${choiceData.timeCost}s</span></div><div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div></button>`;
+  const modifierLine = modifiers.length ? `<div class="gd-choice-modifier">${modifiers[0].label}</div>` : "";
+  return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}><div class="gd-choice-title">${choiceData.label}</div><div class="gd-choice-mid"><div class="gd-choice-icon"><span>${STAT_ICONS[choiceData.stat]}</span></div><span>${titleCase(choiceData.stat)} ${effectiveStat}</span><span>⌛ ${choiceData.timeCost}s</span></div>${modifierLine}<div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div></button>`;
 }
 
 function renderHeroFooter() {
@@ -595,6 +620,7 @@ function renderInventory() {
 }
 
 function inventoryText(name) {
+  if (name === "Lockpick Set") return "Helps on lock choices.";
   if (name.includes("Route") || name.includes("Tunnel")) return "Improves escape options.";
   if (name.includes("Herbs")) return "Can restore health later.";
   if (name.includes("Lockpick")) return "Helps with locked events.";
