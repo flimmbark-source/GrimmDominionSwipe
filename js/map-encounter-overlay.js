@@ -54,6 +54,22 @@
     return null;
   }
 
+  function openNodeEncounter(id, cardId = drawNodeEncounter(id)) {
+    if (!cardId || !cards?.[cardId]) return false;
+    game.pendingNodeMove = null;
+    game.currentCardId = cardId;
+    game.activeEncounter = { nodeId: id, cardId };
+    game.result = `Encounter at ${nodeDef(id)?.label || "Node"}: ${cards[cardId]?.title || "Event"}.`;
+    game.log.unshift(game.result);
+    render();
+    return true;
+  }
+
+  window.forceNodeEncounter = function forceNodeEncounter(id) {
+    const target = id || currentNodeId();
+    return openNodeEncounter(target, drawNodeEncounter(target) || fallbackCardForNode(nodeDef(target)) || "scout_sniffs_path");
+  };
+
   function localSet(centerId) {
     const seen = new Set([centerId]);
     let frontier = [centerId];
@@ -127,7 +143,9 @@
       const walkingTo = walking?.to === id;
       const walkingFrom = walking?.from === id;
       const eventNode = hasGuaranteedEvent(id);
-      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${eventNode ? "event-node" : ""} ${walkingTo ? "walk-target" : ""} ${walkingFrom ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${reachable && !game.awaitingResultAck && !game.activeEncounter && !walking ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
+      const canMove = reachable && !game.awaitingResultAck && !game.activeEncounter && !walking;
+      const handler = canMove ? `onclick="event.preventDefault();event.stopPropagation();window.moveHeroToNode('${id}')"` : "";
+      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${eventNode ? "event-node" : ""} ${walkingTo ? "walk-target" : ""} ${walkingFrom ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${handler} ${canMove ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
     }).join("");
   }
 
@@ -186,17 +204,13 @@
     const cardId = window.drawCardForNode(id);
     console.info("[node-event]", { nodeId: id, node: nodeDef(id)?.label, cardId, card: cardId ? cards[cardId]?.title : null });
     game.pendingNodeMove = null;
-    if (cardId) {
-      game.currentCardId = cardId;
-      game.activeEncounter = { nodeId: id, cardId };
-      game.result = `Encounter at ${nodeDef(id).label}: ${cards[cardId]?.title || "Event"}.`;
-    } else {
+    if (!openNodeEncounter(id, cardId)) {
       game.currentCardId = null;
       game.activeEncounter = null;
       game.result = `Moved to ${nodeDef(id).label}.`;
+      game.log.unshift(game.result);
+      render();
     }
-    game.log.unshift(game.result);
-    render();
   }
 
   window.moveHeroToNode = function moveHeroToNode(id) {
@@ -235,23 +249,7 @@
   };
   acknowledgeResult = window.acknowledgeResult;
 
-  const baseBind = bindEvents;
-  window.bindEvents = function bindEvents() {
-    baseBind();
-    const focusedMap = document.querySelector(".gd-focused-map-card");
-    if (focusedMap && !focusedMap.dataset.encounterCaptureBound) {
-      focusedMap.dataset.encounterCaptureBound = "true";
-      focusedMap.addEventListener("click", event => {
-        const button = event.target.closest("[data-node-id]");
-        if (!button || button.disabled) return;
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        window.moveHeroToNode(button.dataset.nodeId);
-      }, true);
-    }
-  };
-  bindEvents = window.bindEvents;
+  window.bindEvents = bindEvents;
 
   game.activeEncounter ||= null;
   game.pendingNodeMove ||= null;
