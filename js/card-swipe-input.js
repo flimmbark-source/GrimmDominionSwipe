@@ -3,6 +3,7 @@
   const SWIPE_THRESHOLD = 72;
   const MAX_DRAG = 132;
   let state = null;
+  let pendingRender = false;
 
   const clampDrag = (value) => Math.max(-MAX_DRAG, Math.min(MAX_DRAG, value));
 
@@ -21,11 +22,17 @@
   };
 
   const resetCard = (card) => {
-    card.classList.remove("is-swiping", "swipe-left", "swipe-right");
+    card.classList.remove("is-swiping", "swipe-left", "swipe-right", "swipe-ready");
     card.dataset.swipeSide = "neutral";
     card.style.setProperty("--swipe-x", "0px");
     card.style.setProperty("--swipe-rotate", "0deg");
     card.style.setProperty("--swipe-progress", "0");
+  };
+
+  const flushPendingRender = () => {
+    if (!pendingRender) return;
+    pendingRender = false;
+    window.requestAnimationFrame(() => render?.());
   };
 
   const bindSwipe = () => {
@@ -38,6 +45,8 @@
     card.addEventListener("pointerdown", (event) => {
       if (game.activeTab !== "explore" || game.awaitingResultAck || game.lastAction || game.heroTimer <= 0) return;
       if (event.target.closest("[data-choice], [data-ack-result], .gd-card-timer")) return;
+      event.preventDefault();
+      pendingRender = false;
       state = {
         pointerId: event.pointerId,
         startX: event.clientX,
@@ -48,7 +57,7 @@
       };
       card.setPointerCapture?.(event.pointerId);
       card.classList.add("swipe-ready");
-    });
+    }, { passive: false });
 
     card.addEventListener("pointermove", (event) => {
       if (!state || state.pointerId !== event.pointerId || state.card !== card) return;
@@ -61,6 +70,7 @@
 
     const endSwipe = (event) => {
       if (!state || state.pointerId !== event.pointerId || state.card !== card) return;
+      event.preventDefault();
       const dx = state.dx;
       const dy = state.dy;
       const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.2;
@@ -70,24 +80,31 @@
       card.classList.remove("swipe-ready");
 
       if (isHorizontal && Math.abs(dx) >= SWIPE_THRESHOLD && !game.awaitingResultAck && !game.lastAction) {
+        pendingRender = false;
         card.classList.add(side === "left" ? "swipe-confirm-left" : "swipe-confirm-right");
         window.setTimeout(() => choose(side), 90);
       } else {
         resetCard(card);
+        flushPendingRender();
       }
     };
 
-    card.addEventListener("pointerup", endSwipe);
+    card.addEventListener("pointerup", endSwipe, { passive: false });
     card.addEventListener("pointercancel", (event) => {
       if (state?.pointerId === event.pointerId) {
         state = null;
         resetCard(card);
+        flushPendingRender();
       }
     });
   };
 
   const baseRender = render;
   window.render = function(...args) {
+    if (state?.card?.isConnected && game?.activeTab === "explore" && !game.awaitingResultAck && !game.lastAction) {
+      pendingRender = true;
+      return;
+    }
     const result = baseRender.apply(this, args);
     bindSwipe();
     return result;
