@@ -44,7 +44,7 @@
 
     card.addEventListener("pointerdown", (event) => {
       if (game.activeTab !== "explore" || game.awaitingResultAck || game.lastAction || game.heroTimer <= 0) return;
-      if (event.target.closest("[data-choice], [data-ack-result], .gd-card-timer")) return;
+      if (event.target.closest("[data-choice], [data-ack-result]")) return;
       event.preventDefault();
       pendingRender = false;
       state = {
