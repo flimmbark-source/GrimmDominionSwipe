@@ -2,7 +2,7 @@
 (() => {
   const LOCAL_DEPTH = 2;
   const LOCAL_ZOOM = 2.35;
-  const WALK_MS = 520;
+  const WALK_MS = 560;
   const NO_EVENT_CARD = "quiet_village_path";
 
   const hasMap = () => window.VILLAGE_NODE_MAP && game?.mapState?.village?.nodes;
@@ -87,12 +87,14 @@
     }).join("");
   }
 
-  function renderHeroWalker(centerId) {
+  function renderPlayerToken(centerId) {
     const walking = game.pendingNodeMove;
-    if (!walking) return "";
-    const from = projectNode(walking.from, centerId);
-    const to = projectNode(walking.to, centerId);
-    return `<div class="gd-hero-walker" style="--walk-from-x:${from.x}%;--walk-from-y:${from.y}%;--walk-to-x:${to.x}%;--walk-to-y:${to.y}%">♟</div>`;
+    const fromId = walking?.from || centerId;
+    const toId = walking?.to || fromId;
+    const from = projectNode(fromId, centerId);
+    const to = projectNode(toId, centerId);
+    const cls = walking ? "walking" : "idle";
+    return `<div class="gd-map-player-token ${cls}" style="--walk-from-x:${from.x}%;--walk-from-y:${from.y}%;--walk-to-x:${to.x}%;--walk-to-y:${to.y}%"><span>♟</span></div>`;
   }
 
   function renderEncounterOverlay() {
@@ -119,7 +121,7 @@
       <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
-        <div class="gd-focused-node-map gd-node-map" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible)}${renderLocalNodes(centerId, visible)}${renderHeroWalker(centerId)}</div>
+        <div class="gd-focused-node-map gd-node-map" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible)}${renderLocalNodes(centerId, visible)}${renderPlayerToken(centerId)}</div>
         <div class="gd-node-current-readout"><span>Noise ${state.noise} · Danger ${state.danger} · ${chance(centerId)}% risk</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span></div>
       </section>
       <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}${renderEncounterOverlay()}
