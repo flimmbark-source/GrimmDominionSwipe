@@ -52,14 +52,14 @@
   pointer-events: none;
   transform: translateX(-130%) rotate(-9deg);
   opacity: .65;
-  transition: transform 180ms ease-in, opacity 180ms ease-in;
+  transition: transform 280ms ease-in, opacity 280ms ease-in;
 }
 
 .gd-card.swipe-confirm-right {
   pointer-events: none;
   transform: translateX(130%) rotate(9deg);
   opacity: .65;
-  transition: transform 180ms ease-in, opacity 180ms ease-in;
+  transition: transform 280ms ease-in, opacity 280ms ease-in;
 }
 
 .gd-choice.left,
@@ -74,11 +74,42 @@
   box-shadow: 0 0 14px rgba(226, 182, 77, .22), inset 0 0 18px #000;
 }
 
+.gd-action-result {
+  --result-swipe-x: 0px;
+  --result-swipe-rotate: 0deg;
+  transform: translateX(var(--result-swipe-x)) rotate(var(--result-swipe-rotate));
+  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  touch-action: pan-y;
+  user-select: none;
+  will-change: transform;
+}
+
+.gd-action-result.gd-result-swiping {
+  transition: none;
+  cursor: grabbing;
+  filter: brightness(1.05);
+}
+
+.gd-action-result.gd-result-confirm-left {
+  pointer-events: none;
+  transform: translateX(-130%) rotate(-8deg);
+  opacity: .55;
+  transition: transform 280ms ease-in, opacity 280ms ease-in;
+}
+
+.gd-action-result.gd-result-confirm-right {
+  pointer-events: none;
+  transform: translateX(130%) rotate(8deg);
+  opacity: .55;
+  transition: transform 280ms ease-in, opacity 280ms ease-in;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gd-card,
   .gd-card::after,
   .gd-choice.left,
-  .gd-choice.right {
+  .gd-choice.right,
+  .gd-action-result {
     transition: none !important;
   }
 }
