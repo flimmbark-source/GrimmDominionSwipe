@@ -30,6 +30,15 @@
     },
   };
 
+  const THREAT_PLACEMENT = {
+    plague_well: { validTags: ["well", "sewer", "water"], preferredTags: ["well", "water"] },
+    bloodroot: { validTags: ["forest", "road", "path", "route"], preferredTags: ["forest", "road", "route"] },
+    grave_bell: { validTags: ["shrine", "market", "road"], preferredTags: ["shrine", "spirit"] },
+    whispering_idol: { validTags: ["shrine", "forest", "well", "spirit", "dark"], preferredTags: ["shrine", "spirit"] },
+    hound_pack: { validTags: ["road", "forest", "alley", "guard", "kennel"], preferredTags: ["hounds", "patrol", "guard"] },
+    sealed_exit: { validTags: ["road", "path", "alley", "sewer", "forest", "route", "escape"], preferredTags: ["route", "escape", "road"] },
+  };
+
   const clampValue = (value, min, max) => Math.max(min, Math.min(max, value));
   const existingCard = (id) => id && cards?.[id];
   const pick = (pool = []) => {
@@ -83,6 +92,66 @@
     return clampValue((def.encounterChance || 0) + state.noise * 5 + state.danger * 8 + state.corruption * 6 + state.threats.length * 10, 0, 85);
   }
 
+  function bestNodeForCard(cardId, fallbackNodeId = game.hero.currentNodeId) {
+    const card = cards?.[cardId];
+    const cardTags = [card?.badge, ...(card?.choices?.left?.tags || []), ...(card?.choices?.right?.tags || [])]
+      .filter(Boolean)
+      .map(tag => String(tag).toLowerCase());
+    const candidates = Object.keys(MAP.nodes).map(id => {
+      const def = nodeDef(id);
+      const overlap = def.tags.filter(tag => cardTags.includes(tag)).length;
+      const connectedBonus = connectedNodeIds(fallbackNodeId).includes(id) ? 1 : 0;
+      const currentBonus = id === fallbackNodeId ? 2 : 0;
+      return { id, score: overlap * 3 + connectedBonus + currentBonus };
+    }).sort((a, b) => b.score - a.score);
+    return candidates[0]?.score > 0 ? candidates[0].id : fallbackNodeId;
+  }
+
+  function seedCardToNode(nodeId, cardId) {
+    ensureNodeState();
+    if (!nodeDef(nodeId) || !existingCard(cardId)) return false;
+    const state = nodeState(nodeId);
+    state.seededCards ||= [];
+    if (!state.seededCards.includes(cardId)) state.seededCards.push(cardId);
+    state.visible = true;
+    return true;
+  }
+
+  function canPlaceThreatAtNode(threatId, nodeId) {
+    const def = nodeDef(nodeId);
+    const rules = THREAT_PLACEMENT[threatId];
+    if (!def || !rules) return Boolean(def);
+    return rules.validTags.some(tag => def.tags.includes(tag));
+  }
+
+  function bestNodeForThreat(threatId, fallbackNodeId = game.hero.currentNodeId) {
+    const rules = THREAT_PLACEMENT[threatId];
+    const candidates = Object.keys(MAP.nodes)
+      .filter(id => canPlaceThreatAtNode(threatId, id))
+      .map(id => {
+        const def = nodeDef(id);
+        const state = nodeState(id);
+        const preferred = rules?.preferredTags?.filter(tag => def.tags.includes(tag)).length || 0;
+        const pressure = state.noise + state.danger + state.corruption;
+        const connectedBonus = connectedNodeIds(fallbackNodeId).includes(id) ? 2 : 0;
+        const currentBonus = id === fallbackNodeId ? 1 : 0;
+        return { id, score: preferred * 4 + pressure + connectedBonus + currentBonus };
+      }).sort((a, b) => b.score - a.score);
+    return candidates[0]?.id || fallbackNodeId;
+  }
+
+  function addThreatToNode(nodeId, threatId) {
+    ensureNodeState();
+    if (!nodeDef(nodeId) || !canPlaceThreatAtNode(threatId, nodeId)) return false;
+    const state = nodeState(nodeId);
+    state.threats ||= [];
+    if (!state.threats.includes(threatId)) state.threats.push(threatId);
+    const cardId = DARK_THREATS?.[threatId]?.cardId;
+    if (cardId) seedCardToNode(nodeId, cardId);
+    state.visible = true;
+    return true;
+  }
+
   function addNoiseToNode(id, amount = 1) {
     const state = nodeState(id);
     if (!state) return;
@@ -129,6 +198,18 @@
     return true;
   }
 
+  function renderReachableNodes(currentId) {
+    const buttons = connectedNodeIds(currentId).map(id => {
+      const def = nodeDef(id);
+      const state = nodeState(id);
+      const chance = encounterChance(id);
+      const pressure = state.noise >= 7 ? "Alarm" : state.noise >= 4 ? "Noise" : state.threats.length ? "Threat" : "Clear";
+      const tags = def.tags.slice(0, 2).map(tag => `<i>${tag}</i>`).join("");
+      return `<button class="gd-node-destination ${def.kind}" data-node-id="${id}" ${game.awaitingResultAck ? "disabled" : ""}><strong>${def.label}</strong><span>-${moveCost(id)}s · ${chance}%</span><em>${pressure}</em><small>${tags}</small></button>`;
+    }).join("");
+    return `<div class="gd-node-destinations">${buttons}</div>`;
+  }
+
   function renderVillageNodeMap() {
     ensureNodeState();
     const currentId = game.hero.currentNodeId;
@@ -152,8 +233,10 @@
       return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${visible ? "visible" : "hidden"} ${pressure}" data-node-id="${id}" style="left:${def.x}%;top:${def.y}%" ${reachable && !game.awaitingResultAck ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
     }).join("");
     const current = nodeDef(currentId);
+    const state = nodeState(currentId);
     const tags = current.tags.slice(0, 3).map(tag => `<b>${tag}</b>`).join("");
-    return `<section class="gd-node-map-panel"><div class="gd-node-map-head"><div><strong>${MAP.title}</strong><small>${current.label}</small></div><div class="gd-node-tags">${tags}</div></div><div class="gd-node-map" style="background-image:linear-gradient(#05060588,#050605c5),url('${ART.scout}')">${lines.join("")}${nodes}</div></section>`;
+    const pressure = `Noise ${state.noise} · Danger ${state.danger} · ${encounterChance(currentId)}%`;
+    return `<section class="gd-node-map-panel"><div class="gd-node-map-head"><div><strong>${MAP.title}</strong><small>${current.label}</small></div><div class="gd-node-tags">${tags}</div></div><div class="gd-node-map" style="background-image:linear-gradient(#05060588,#050605c5),url('${ART.scout}')">${lines.join("")}${nodes}</div><div class="gd-node-current-readout"><span>${pressure}</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span></div>${renderReachableNodes(currentId)}</section>`;
   }
 
   const baseApplyRewards = applyRewards;
@@ -161,6 +244,11 @@
     const ghosts = baseApplyRewards(rewards);
     rewards.forEach(reward => {
       if (reward.type === "noise") addNoiseToNode(game.hero.currentNodeId, reward.amount || 1);
+      if (reward.type === "nodeNoise") addNoiseToNode(reward.nodeId || game.hero.currentNodeId, reward.amount || 1);
+      if (reward.type === "nodeCard") seedCardToNode(reward.nodeId || bestNodeForCard(reward.cardId), reward.cardId);
+      if (reward.type === "nodeThreat") addThreatToNode(reward.nodeId || bestNodeForThreat(reward.threatId), reward.threatId);
+      if (reward.type === "regionCard") seedCardToNode(bestNodeForCard(reward.cardId), reward.cardId);
+      if (reward.type === "moveNode") moveHeroToNode(reward.nodeId);
     });
     return ghosts;
   };
@@ -187,7 +275,12 @@
   };
   bindEvents = window.bindEvents;
 
-  Object.assign(window, { VILLAGE_NODE_MAP: MAP, ensureNodeState, moveHeroToNode, drawCardForNode, addNoiseToNode, renderVillageNodeMap });
+  window.nodeCard = function nodeCard(nodeId, cardId) { return { type: "nodeCard", nodeId, cardId }; };
+  window.nodeThreat = function nodeThreat(nodeId, threatId) { return { type: "nodeThreat", nodeId, threatId }; };
+  window.nodeNoise = function nodeNoise(nodeId, amount = 1) { return { type: "nodeNoise", nodeId, amount }; };
+  window.moveNode = function moveNode(nodeId) { return { type: "moveNode", nodeId }; };
+
+  Object.assign(window, { VILLAGE_NODE_MAP: MAP, ensureNodeState, moveHeroToNode, drawCardForNode, addNoiseToNode, seedCardToNode, addThreatToNode, bestNodeForCard, bestNodeForThreat, renderVillageNodeMap });
   ensureNodeState();
   render?.();
 })();
