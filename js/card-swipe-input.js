@@ -2,6 +2,7 @@
 (() => {
   const SWIPE_THRESHOLD = 72;
   const MAX_DRAG = 132;
+  const CONFIRM_MS = 280;
   let state = null;
   let pendingRender = false;
 
@@ -22,7 +23,7 @@
   };
 
   const resetCard = (card) => {
-    card.classList.remove("is-swiping", "swipe-left", "swipe-right", "swipe-ready");
+    card.classList.remove("is-swiping", "swipe-left", "swipe-right", "swipe-ready", "swipe-confirm-left", "swipe-confirm-right");
     card.dataset.swipeSide = "neutral";
     card.style.setProperty("--swipe-x", "0px");
     card.style.setProperty("--swipe-rotate", "0deg");
@@ -35,6 +36,21 @@
     window.requestAnimationFrame(() => render?.());
   };
 
+  const resolveAfterSlide = (card, side) => {
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      card.removeEventListener("transitionend", onTransitionEnd);
+      if (!game.awaitingResultAck && !game.lastAction) choose(side);
+    };
+    const onTransitionEnd = (event) => {
+      if (event.target === card && event.propertyName === "transform") finish();
+    };
+    card.addEventListener("transitionend", onTransitionEnd);
+    window.setTimeout(finish, CONFIRM_MS + 80);
+  };
+
   const bindSwipe = () => {
     const card = document.querySelector(".gd-card");
     if (!card || card.dataset.swipeBound) return;
@@ -44,7 +60,7 @@
 
     card.addEventListener("pointerdown", (event) => {
       if (game.activeTab !== "explore" || game.awaitingResultAck || game.lastAction || game.heroTimer <= 0) return;
-      if (event.target.closest("[data-choice], [data-ack-result], .gd-card-timer")) return;
+      if (event.target.closest("[data-ack-result]")) return;
       event.preventDefault();
       pendingRender = false;
       state = {
@@ -77,12 +93,12 @@
       const side = dx < 0 ? "left" : "right";
       state = null;
       card.releasePointerCapture?.(event.pointerId);
-      card.classList.remove("swipe-ready");
+      card.classList.remove("swipe-ready", "is-swiping");
 
       if (isHorizontal && Math.abs(dx) >= SWIPE_THRESHOLD && !game.awaitingResultAck && !game.lastAction) {
         pendingRender = false;
         card.classList.add(side === "left" ? "swipe-confirm-left" : "swipe-confirm-right");
-        window.setTimeout(() => choose(side), 90);
+        resolveAfterSlide(card, side);
       } else {
         resetCard(card);
         flushPendingRender();
@@ -99,6 +115,43 @@
     });
   };
 
+  const installLightweightTimer = () => {
+    if (window.__lightweightTimerInstalled || typeof tick !== "function") return;
+    window.__lightweightTimerInstalled = true;
+
+    window.updateTimerDom = function updateTimerDom() {
+      document.querySelectorAll(".gd-timer").forEach(node => {
+        const label = node.parentElement?.querySelector(".gd-timer-label")?.textContent || "";
+        const isDark = node.classList.contains("red") || label.includes("Dark Lord");
+        node.textContent = `${isDark ? game.darkLordTimer : game.heroTimer}s`;
+      });
+    };
+
+    window.tick = function tick() {
+      game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
+
+      if (game.darkLordTimer === 0) {
+        if (typeof resultReadyTimeoutId !== "undefined" && resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+        resultReadyTimeoutId = null;
+        resolveDarkLordPlan();
+        if (typeof applyFoodUpkeep === "function") applyFoodUpkeep();
+        game.darkLordTimer = 60;
+        game.heroTimer = 40;
+        game.awaitingResultAck = false;
+        game.resultReady = false;
+        game.pendingNextCardId = null;
+        game.lastAction = null;
+        render();
+        return;
+      }
+
+      updateTimerDom();
+    };
+    tick = window.tick;
+    startTimers?.();
+    updateTimerDom();
+  };
+
   const baseRender = render;
   window.render = function(...args) {
     if (state?.card?.isConnected && game?.activeTab === "explore" && !game.awaitingResultAck && !game.lastAction) {
@@ -107,9 +160,11 @@
     }
     const result = baseRender.apply(this, args);
     bindSwipe();
+    window.updateTimerDom?.();
     return result;
   };
   render = window.render;
 
   bindSwipe();
+  installLightweightTimer();
 })();
