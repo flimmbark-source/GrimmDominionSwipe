@@ -1,0 +1,41 @@
+.gd-choice-wrap {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gd-choice-stat-label {
+  color: var(--gd-gold);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  text-shadow: 0 0 8px #000;
+  pointer-events: none;
+}
+
+.gd-choice-wrap.left .gd-choice-stat-label {
+  text-align: left;
+  padding-left: 4px;
+}
+
+.gd-choice-wrap.right .gd-choice-stat-label {
+  text-align: right;
+  padding-right: 4px;
+}
+
+.gd-choice-row .gd-choice-wrap {
+  width: 100%;
+}
+
+@media (max-height: 700px) {
+  .gd-choice-wrap {
+    gap: 3px;
+  }
+
+  .gd-choice-stat-label {
+    font-size: 9px;
+  }
+}
