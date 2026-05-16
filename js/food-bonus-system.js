@@ -1,20 +1,13 @@
-// Food system: each Food gives the registry-defined roll bonus. At round end, lose 1 old Food if any.
+// Food system: Food is a healing resource only. At round end, lose 1 old Food if any and heal.
 (() => {
-  const foodBonusPerUnit = () => window.GD_MODIFIERS?.food?.rollBonusPerUnit || 5;
+  const foodHealPerUnit = () => window.GD_MODIFIERS?.food?.healsPerConsumedFood || 1;
 
   game.hero.foodGainedThisRound ||= 0;
   game.hero.foodUpkeepTickId ||= 0;
 
-  const baseGetRollBonus = typeof getRollBonus === "function" ? getRollBonus : () => 0;
-
   window.getFoodRollBonus = function getFoodRollBonus() {
-    return Math.max(0, game?.hero?.food || 0) * foodBonusPerUnit();
+    return 0;
   };
-
-  window.getRollBonus = function getRollBonus(choiceData) {
-    return baseGetRollBonus(choiceData) + getFoodRollBonus();
-  };
-  getRollBonus = window.getRollBonus;
 
   const findFoodNode = () => [...document.querySelectorAll(".gd-resource b")]
     .find(node => (node.textContent || "").includes("Food"));
@@ -26,9 +19,10 @@
 
     const sourceRect = source.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
+    const healAmount = foodHealPerUnit();
     const ghost = document.createElement("div");
     ghost.className = "gd-food-heal-ghost";
-    ghost.textContent = "+1❤️";
+    ghost.textContent = `+${healAmount}❤️`;
     ghost.style.left = `${sourceRect.left + sourceRect.width / 2}px`;
     ghost.style.top = `${sourceRect.top + sourceRect.height / 2}px`;
     ghost.style.setProperty("--food-heal-target-x", `${targetRect.left + targetRect.width / 2}px`);
@@ -45,10 +39,11 @@
     const protectedFood = Math.max(0, game.hero.foodGainedThisRound || 0);
     const oldFood = Math.max(0, (game.hero.food || 0) - protectedFood);
     if (oldFood > 0) {
+      const healAmount = foodHealPerUnit();
       spawnFoodHealGhost();
       game.hero.food = Math.max(0, game.hero.food - 1);
-      game.partyHealth = Math.min(10, game.partyHealth + 1);
-      game.log.unshift("The Goblin eats 1 old Food and restores 1 Health before the next round.");
+      game.partyHealth = Math.min(10, game.partyHealth + healAmount);
+      game.log.unshift(`The Goblin eats 1 old Food and restores ${healAmount} Health before the next round.`);
       syncPartyHeroSummary?.();
     }
     game.hero.foodGainedThisRound = 0;
