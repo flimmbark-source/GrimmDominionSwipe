@@ -82,6 +82,7 @@
       }
     };
     tick = window.tick;
+    if (typeof startTimers === "function") startTimers();
   }
 
   window.applyFoodUpkeep = applyFoodUpkeep;
