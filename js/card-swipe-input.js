@@ -202,7 +202,11 @@
     window.applyRewards = function applyRewards(rewards = []) {
       const ghosts = baseApplyRewards(rewards);
       ghosts?.forEach(ghost => {
-        if (ghost.kind === "card") ghost.text = String(ghost.text || "").replace(/\s+added$/i, "");
+        if (ghost.kind === "card") {
+          ghost.text = String(ghost.text || "").replace(/\s+added$/i, "");
+          ghost.className = `${ghost.className || "item"} card`.trim();
+          ghost.destination = "explore";
+        }
       });
       return ghosts;
     };
