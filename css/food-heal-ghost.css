@@ -1,0 +1,46 @@
+.gd-food-heal-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 42px;
+  padding: 5px 8px;
+  border: 1px solid #3f5538;
+  background: #050605e8;
+  color: var(--gd-green);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 0 16px #78d78a38, inset 0 0 12px #000;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  animation: gdFoodHealToHp 1600ms cubic-bezier(.2, .72, .2, 1) forwards;
+}
+
+@keyframes gdFoodHealToHp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(.82);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -18px) scale(1.06);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-50%, -32px) scale(1);
+  }
+  88% {
+    opacity: 1;
+    left: var(--food-heal-target-x);
+    top: var(--food-heal-target-y);
+    transform: translate(-50%, -50%) scale(.82);
+  }
+  100% {
+    opacity: 0;
+    left: var(--food-heal-target-x);
+    top: var(--food-heal-target-y);
+    transform: translate(-50%, -45%) scale(.55);
+  }
+}
