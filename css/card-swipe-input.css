@@ -10,12 +10,14 @@
 }
 
 .gd-card.swipe-ready,
-.gd-card.is-swiping {
+.gd-card.is-swiping,
+.gd-card.result-card-swiping {
   transition: none;
   cursor: grabbing;
 }
 
-.gd-card.is-swiping {
+.gd-card.is-swiping,
+.gd-card.result-card-swiping {
   filter: brightness(calc(1 + var(--swipe-progress) * .06));
 }
 
@@ -48,17 +50,19 @@
   box-shadow: 0 16px 36px #000c, 10px 0 22px rgba(120, 215, 138, .18);
 }
 
-.gd-card.swipe-confirm-left {
+.gd-card.swipe-confirm-left,
+.gd-card.result-card-confirm-left {
   pointer-events: none;
-  transform: translateX(-130%) rotate(-9deg);
-  opacity: .65;
+  transform: translateX(-130vw) rotate(-9deg);
+  opacity: .55;
   transition: transform 280ms ease-in, opacity 280ms ease-in;
 }
 
-.gd-card.swipe-confirm-right {
+.gd-card.swipe-confirm-right,
+.gd-card.result-card-confirm-right {
   pointer-events: none;
-  transform: translateX(130%) rotate(9deg);
-  opacity: .65;
+  transform: translateX(130vw) rotate(9deg);
+  opacity: .55;
   transition: transform 280ms ease-in, opacity 280ms ease-in;
 }
 
@@ -75,33 +79,13 @@
 }
 
 .gd-action-result {
-  --result-swipe-x: 0px;
-  --result-swipe-rotate: 0deg;
-  transform: translateX(var(--result-swipe-x)) rotate(var(--result-swipe-rotate));
-  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  transition: filter 180ms ease;
   touch-action: pan-y;
   user-select: none;
-  will-change: transform;
 }
 
-.gd-action-result.gd-result-swiping {
-  transition: none;
-  cursor: grabbing;
+.gd-card.result-card-swiping .gd-action-result {
   filter: brightness(1.05);
-}
-
-.gd-action-result.gd-result-confirm-left {
-  pointer-events: none;
-  transform: translateX(-130%) rotate(-8deg);
-  opacity: .55;
-  transition: transform 280ms ease-in, opacity 280ms ease-in;
-}
-
-.gd-action-result.gd-result-confirm-right {
-  pointer-events: none;
-  transform: translateX(130%) rotate(8deg);
-  opacity: .55;
-  transition: transform 280ms ease-in, opacity 280ms ease-in;
 }
 
 @media (prefers-reduced-motion: reduce) {
