@@ -1,0 +1,15 @@
+.gd-node-map {
+  background-image:
+    linear-gradient(#05060555, #050605b8),
+    url('../assets/maps/whispermoor-village-bg.svg') !important;
+  background-position: center;
+  background-size: cover;
+}
+
+.gd-map-node.water { background: #4e7f96; }
+.gd-map-node.yard { background: #78735b; }
+.gd-map-node.shed { background: #8b6b4d; }
+
+.gd-node-destination.water { border-color: #31566a; }
+.gd-node-destination.yard { border-color: #514a31; }
+.gd-node-destination.shed { border-color: #5d4129; }
