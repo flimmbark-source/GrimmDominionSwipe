@@ -1,0 +1,84 @@
+.gd-card {
+  --swipe-x: 0px;
+  --swipe-rotate: 0deg;
+  --swipe-progress: 0;
+  transform: translateX(var(--swipe-x)) rotate(var(--swipe-rotate));
+  transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+  touch-action: pan-y;
+  user-select: none;
+  will-change: transform;
+}
+
+.gd-card.swipe-ready,
+.gd-card.is-swiping {
+  transition: none;
+  cursor: grabbing;
+}
+
+.gd-card.is-swiping {
+  filter: brightness(calc(1 + var(--swipe-progress) * .06));
+}
+
+.gd-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  mix-blend-mode: screen;
+}
+
+.gd-card.swipe-left::after {
+  opacity: calc(var(--swipe-progress) * .34);
+  background: linear-gradient(90deg, rgba(232, 88, 88, .65), transparent 58%);
+}
+
+.gd-card.swipe-right::after {
+  opacity: calc(var(--swipe-progress) * .34);
+  background: linear-gradient(270deg, rgba(120, 215, 138, .65), transparent 58%);
+}
+
+.gd-card.swipe-left {
+  box-shadow: 0 16px 36px #000c, -10px 0 22px rgba(232, 88, 88, .18);
+}
+
+.gd-card.swipe-right {
+  box-shadow: 0 16px 36px #000c, 10px 0 22px rgba(120, 215, 138, .18);
+}
+
+.gd-card.swipe-confirm-left {
+  pointer-events: none;
+  transform: translateX(-130%) rotate(-9deg);
+  opacity: .65;
+  transition: transform 180ms ease-in, opacity 180ms ease-in;
+}
+
+.gd-card.swipe-confirm-right {
+  pointer-events: none;
+  transform: translateX(130%) rotate(9deg);
+  opacity: .65;
+  transition: transform 180ms ease-in, opacity 180ms ease-in;
+}
+
+.gd-choice.left,
+.gd-choice.right {
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.gd-card.swipe-left .gd-choice.left,
+.gd-card.swipe-right .gd-choice.right {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.08);
+  box-shadow: 0 0 14px rgba(226, 182, 77, .22), inset 0 0 18px #000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gd-card,
+  .gd-card::after,
+  .gd-choice.left,
+  .gd-choice.right {
+    transition: none !important;
+  }
+}
