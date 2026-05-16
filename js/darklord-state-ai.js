@@ -32,6 +32,29 @@
     });
   }
 
+  function spawnDarkLordSeedGhost(regionId, cardId) {
+    if (regionId !== game.hero.regionId || typeof document === "undefined") return;
+    const source = document.querySelector(".gd-timer.red") || document.querySelector(".gd-card-timer");
+    const target = [...document.querySelectorAll(".gd-tab")].find(node => (node.textContent || "").includes("Explore"));
+    if (!source || !target) return;
+    const sourceRect = source.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const ghost = document.createElement("div");
+    ghost.className = "gd-darklord-seed-ghost gd-ghost-portal to-explore";
+    ghost.dataset.destination = "explore";
+    ghost.innerHTML = `<span class="ghost-icon">☠</span><span class="ghost-text">${cards?.[cardId]?.title || cardId}</span>`;
+    ghost.style.left = `${sourceRect.left + sourceRect.width / 2}px`;
+    ghost.style.top = `${sourceRect.top + sourceRect.height / 2}px`;
+    ghost.style.setProperty("--handoff-target-x", `${targetRect.left + targetRect.width / 2}px`);
+    ghost.style.setProperty("--handoff-target-y", `${targetRect.top + targetRect.height / 2}px`);
+    document.body.appendChild(ghost);
+    target.classList.remove("ghost-target-pulse");
+    window.setTimeout(() => {
+      target.classList.add("ghost-target-pulse");
+    }, 1150);
+    ghost.addEventListener("animationend", () => ghost.remove(), { once: true });
+  }
+
   function setHeroVisibility(state, regionId = game.hero.regionId) {
     ensureDarkLordState();
     game.hero.visibility.state = state;
@@ -61,6 +84,7 @@
     if (!region.threats.some(active => active.id === threatId)) {
       region.threats.push({ id: threatId, turnsActive: 0 });
       addCardToRegionDeck(regionId, threat.cardId);
+      spawnDarkLordSeedGhost(regionId, threat.cardId);
       game.log.unshift(`${threat.title} takes root in ${region.name}.`);
     }
     return true;
@@ -115,7 +139,10 @@
     if (!command || !region || game.darkLord.evilEnergy < command.cost) return false;
     game.darkLord.evilEnergy -= command.cost;
     if (command.threatId) addThreatToRegion(regionId, command.threatId);
-    if (command.seedCardId) addCardToRegionDeck(regionId, command.seedCardId);
+    if (command.seedCardId) {
+      addCardToRegionDeck(regionId, command.seedCardId);
+      spawnDarkLordSeedGhost(regionId, command.seedCardId);
+    }
     region.pending = [...(region.pending || []), command.title];
     game.darkLord.pending.push({ card: command, regionId });
     game.log.unshift(`Dark Lord plans ${command.title} on ${region.name}.`);
@@ -159,7 +186,7 @@
   };
   resolveDarkLordPlan = window.resolveDarkLordPlan;
 
-  Object.assign(window, { DARK_THREATS: THREATS, DARK_COMMANDS: COMMANDS, ensureDarkLordState, setHeroVisibility, regionNoise, addThreatToRegion, removeThreatFromRegion, resolveRegionThreats, chooseAiDarkLordPlan, noiseLabel, corruptionLabel });
+  Object.assign(window, { DARK_THREATS: THREATS, DARK_COMMANDS: COMMANDS, ensureDarkLordState, setHeroVisibility, regionNoise, addThreatToRegion, removeThreatFromRegion, resolveRegionThreats, chooseAiDarkLordPlan, spawnDarkLordSeedGhost, noiseLabel, corruptionLabel });
   ensureDarkLordState();
   render?.();
 })();
