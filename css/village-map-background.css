@@ -1,7 +1,7 @@
 .gd-node-map {
   background-image:
     linear-gradient(#05060533, #050605aa),
-    url('../assets/maps/whispermoor-village-bg.svg') !important;
+    url('../assets/maps/whispermoor-village-bg.png') !important;
   background-position: var(--map-focus-x, 50%) var(--map-focus-y, 50%) !important;
   background-size: 245% !important;
 }
