@@ -146,6 +146,111 @@
 .gd-map-node.forest { background: #5f8a55; }
 .gd-map-node.alley { background: #6f6b83; }
 
+.gd-node-current-readout {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-top: 1px solid #2e281b;
+  border-bottom: 1px solid #2e281b;
+  background: #080907;
+  color: var(--gd-muted);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.gd-node-destinations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  padding: 6px;
+}
+
+.gd-node-destination {
+  min-width: 0;
+  padding: 6px 5px;
+  border: 1px solid #3f3828;
+  background: #10120d;
+  color: var(--gd-cream);
+  text-align: left;
+  box-shadow: inset 0 0 10px #000;
+}
+
+.gd-node-destination strong,
+.gd-node-destination span,
+.gd-node-destination em,
+.gd-node-destination small {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.gd-node-destination strong {
+  color: var(--gd-gold);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gd-node-destination span {
+  margin-top: 4px;
+  color: var(--gd-muted);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.gd-node-destination em {
+  margin-top: 3px;
+  color: var(--gd-green);
+  font-size: 8px;
+  font-style: normal;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.gd-node-destination small {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.gd-node-destination i {
+  padding: 2px 3px;
+  border: 1px solid #3f3828;
+  color: var(--gd-muted);
+  font-size: 7px;
+  font-style: normal;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.gd-node-destination.guard,
+.gd-node-destination.kennel {
+  border-color: #69382e;
+}
+
+.gd-node-destination.market,
+.gd-node-destination.house {
+  border-color: #5f4a29;
+}
+
+.gd-node-destination.well,
+.gd-node-destination.sewer {
+  border-color: #31566a;
+}
+
+.gd-node-destination.shrine {
+  border-color: #5a4774;
+}
+
+.gd-node-destination:disabled {
+  opacity: .55;
+}
+
 @media (max-height: 700px) {
   .gd-node-map {
     height: 126px;
@@ -158,5 +263,14 @@
 
   .gd-node-map-head {
     padding: 5px 7px 4px;
+  }
+
+  .gd-node-destinations {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .gd-node-destination {
+    padding: 5px 4px;
   }
 }
