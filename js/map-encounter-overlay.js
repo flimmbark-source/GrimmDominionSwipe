@@ -1,9 +1,9 @@
-// Map-first Explore flow: movement stays on the map; real encounters appear as an overlay, not a tab.
+// Map-first Explore flow: Explore is the map; encounters use the original card screen.
 (() => {
   const LOCAL_DEPTH = 2;
   const LOCAL_ZOOM = 2.35;
   const WALK_MS = 560;
-  const EVENT_EXIT_MS = 260;
+  const EVENT_EXIT_MS = 220;
   const NO_EVENT_CARD = "quiet_village_path";
 
   const hasMap = () => window.VILLAGE_NODE_MAP && game?.mapState?.village?.nodes;
@@ -58,9 +58,9 @@
   function openNodeEncounter(id, cardId = drawNodeEncounter(id)) {
     if (!cardId || !cards?.[cardId]) return false;
     game.pendingNodeMove = null;
-    game.eventTransition = "enter";
     game.currentCardId = cardId;
     game.activeEncounter = { nodeId: id, cardId };
+    game.eventTransition = "enter";
     game.result = `Encounter at ${nodeDef(id)?.label || "Node"}: ${cards[cardId]?.title || "Event"}.`;
     game.log.unshift(game.result);
     render();
@@ -130,11 +130,7 @@
   function hasGuaranteedEvent(id) {
     const def = nodeDef(id);
     const state = nodeState(id);
-    if (!def || !state) return false;
-    if ((def.eventPool || []).length) return true;
-    if ((state.seededCards || []).length) return true;
-    if ((state.threats || []).length) return true;
-    return false;
+    return Boolean(def && state && ((def.eventPool || []).length || (state.seededCards || []).length || (state.threats || []).length));
   }
 
   function renderLocalNodes(centerId, visible) {
@@ -146,12 +142,9 @@
       const current = id === centerId;
       const reachable = direct.has(id);
       const preview = !current && !reachable;
-      const walkingTo = walking?.to === id;
-      const walkingFrom = walking?.from === id;
-      const eventNode = hasGuaranteedEvent(id);
       const canMove = reachable && !game.awaitingResultAck && !game.activeEncounter && !walking;
       const handler = canMove ? `onclick="event.preventDefault();event.stopPropagation();window.moveHeroToNode('${id}')"` : "";
-      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${eventNode ? "event-node" : ""} ${walkingTo ? "walk-target" : ""} ${walkingFrom ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${handler} ${canMove ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
+      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${hasGuaranteedEvent(id) ? "event-node" : ""} ${walking?.to === id ? "walk-target" : ""} ${walking?.from === id ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${handler} ${canMove ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
     }).join("");
   }
 
@@ -161,24 +154,10 @@
     const toId = walking?.to || fromId;
     const from = projectNode(fromId, centerId);
     const to = projectNode(toId, centerId);
-    const cls = walking ? "walking" : "idle";
-    return `<div class="gd-map-player-token ${cls}" style="--walk-from-x:${from.x}%;--walk-from-y:${from.y}%;--walk-to-x:${to.x}%;--walk-to-y:${to.y}%"><span>♟</span></div>`;
+    return `<div class="gd-map-player-token ${walking ? "walking" : "idle"}" style="--walk-from-x:${from.x}%;--walk-from-y:${from.y}%;--walk-to-x:${to.x}%;--walk-to-y:${to.y}%"><span>♟</span></div>`;
   }
 
-  function renderGoblinOutlawBar() {
-    return `<section class="gd-event-hero-bar"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name} <span class="gd-inline-hp">♥ ${game.partyHealth}/10</span></div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold ${game.hero.resourceValue}<br><b>Food ${game.hero.food}</b></div></section>`;
-  }
-
-  function renderEncounterOverlay() {
-    if (!game.activeEncounter) return "";
-    const card = cards[game.currentCardId];
-    if (!card) return "";
-    const badge = card.badge ? `<div class="gd-card-badge">${card.badge}</div>` : "";
-    const transition = game.eventTransition || "active";
-    return `<section class="gd-map-encounter-overlay ${transition}"><div class="gd-map-encounter-scrim"></div><div class="gd-encounter-stack">${renderGoblinOutlawBar()}<section class="gd-card gd-encounter-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section></div></section>`;
-  }
-
-  window.renderMapFirstExplore = function renderMapFirstExplore() {
+  function renderMapScreen() {
     if (!hasMap()) return renderExplore();
     ensureNodeState?.();
     const move = game.pendingNodeMove;
@@ -190,20 +169,37 @@
     const bgX = clamp(center.x, 12, 88);
     const bgY = clamp(center.y, 12, 88);
     const hint = move ? `Moving to ${nodeDef(move.to)?.label}.` : (game.result || "Tap a connected node on the map to move.");
-    return `<div class="gd-main-scroll gd-map-first-screen ${game.activeEncounter ? "has-encounter" : ""}">
+    return `<div class="gd-main-scroll gd-map-first-screen map-mode ${game.eventTransition || "active"}">
       <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
         <div class="gd-focused-node-map gd-node-map" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible)}${renderLocalNodes(centerId, visible)}${renderPlayerToken(centerId)}</div>
         <div class="gd-node-current-readout"><span>Noise ${state.noise} · Danger ${state.danger} · ${chance(centerId)}% risk</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span></div>
       </section>
-      <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}${renderEncounterOverlay()}
+      <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}
     </div>`;
+  }
+
+  function renderEventScreen() {
+    const card = cards[game.currentCardId];
+    const region = game.regions[game.hero.regionId];
+    const node = nodeDef(game.activeEncounter?.nodeId || currentNodeId());
+    if (!card) return renderMapScreen();
+    const badge = card.badge ? `<div class="gd-card-badge">${card.badge}</div>` : "";
+    return `<div class="gd-main-scroll gd-map-event-screen ${game.eventTransition || "active"}">
+      <section class="gd-top single-right"><div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
+      <section class="gd-region-header"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-region-title">${node?.label || region.name}</div><div class="gd-subtitle">${region.subtitle}</div></div></div><div class="gd-pill">Event</div></section>
+      ${renderHeroFooter()}
+      <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
+      <div class="gd-result-toast">${game.result}</div>
+    </div>`;
+  }
+
+  window.renderMapFirstExplore = function renderMapFirstExplore() {
+    return game.activeEncounter ? renderEventScreen() : renderMapScreen();
   };
 
-  window.drawCardForNode = function drawCardForNode(id) {
-    return drawNodeEncounter(id);
-  };
+  window.drawCardForNode = function drawCardForNode(id) { return drawNodeEncounter(id); };
   drawCardForNode = window.drawCardForNode;
 
   function completeMove(id) {
@@ -212,9 +208,8 @@
     nodeState(id).visible = true;
     connected(id).forEach(next => nodeState(next).visible = true);
     game.heroTimer = Math.max(0, game.heroTimer - moveCost(id));
-    const cardId = window.drawCardForNode(id);
-    console.info("[node-event]", { nodeId: id, node: nodeDef(id)?.label, cardId, card: cardId ? cards[cardId]?.title : null });
     game.pendingNodeMove = null;
+    const cardId = window.drawCardForNode(id);
     if (!openNodeEncounter(id, cardId)) {
       game.currentCardId = null;
       game.activeEncounter = null;
@@ -242,13 +237,6 @@
   };
   renderScreen = window.renderScreen;
 
-  const baseRenderTabs = renderTabs;
-  window.renderTabs = function renderTabs() {
-    const html = baseRenderTabs();
-    return html.replace(/<button class="gd-tab[^>]*data-tab="event"[\s\S]*?<\/button>/g, "");
-  };
-  renderTabs = window.renderTabs;
-
   const baseAck = acknowledgeResult;
   window.acknowledgeResult = function acknowledgeResult() {
     if (game.activeEncounter && game.resultReady) {
@@ -267,8 +255,6 @@
     baseAck();
   };
   acknowledgeResult = window.acknowledgeResult;
-
-  window.bindEvents = bindEvents;
 
   game.activeEncounter ||= null;
   game.pendingNodeMove ||= null;
