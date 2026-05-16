@@ -92,15 +92,32 @@
     return seen;
   }
 
-  function projectNode(id, centerId) {
-    const center = nodeDef(centerId);
+  function cameraPoint() {
+    const move = game.pendingNodeMove;
+    if (!move) {
+      const current = nodeDef(currentNodeId());
+      return { x: current.x, y: current.y, centerId: currentNodeId(), moving: false };
+    }
+    const from = nodeDef(move.from);
+    const to = nodeDef(move.to);
+    const t = clamp(((performance.now() - move.startedAt) / WALK_MS), 0, 1);
+    const eased = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    return {
+      x: from.x + (to.x - from.x) * eased,
+      y: from.y + (to.y - from.y) * eased,
+      centerId: move.from,
+      moving: true,
+    };
+  }
+
+  function projectNode(id, camera) {
     const def = nodeDef(id);
-    return { x: 50 + (def.x - center.x) * LOCAL_ZOOM, y: 50 + (def.y - center.y) * LOCAL_ZOOM };
+    return { x: 50 + (def.x - camera.x) * LOCAL_ZOOM, y: 50 + (def.y - camera.y) * LOCAL_ZOOM };
   }
 
   function inViewport(point) { return point.x >= -8 && point.x <= 108 && point.y >= -8 && point.y <= 108; }
 
-  function localEdges(centerId, visible) {
+  function localEdges(centerId, visible, camera) {
     const direct = new Set(connected(centerId));
     const lines = Object.entries(map().nodes).flatMap(([id, def]) => {
       if (!visible.has(id)) return [];
@@ -108,8 +125,8 @@
         .filter(target => id < target && visible.has(target))
         .filter(target => id === centerId || target === centerId || direct.has(id) || direct.has(target))
         .map(target => {
-          const a = projectNode(id, centerId);
-          const b = projectNode(target, centerId);
+          const a = projectNode(id, camera);
+          const b = projectNode(target, camera);
           if (!inViewport(a) && !inViewport(b)) return "";
           const primary = id === centerId || target === centerId;
           return `<line class="${primary ? "primary" : "preview"}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" />`;
@@ -133,13 +150,13 @@
     return Boolean(def && state && ((def.eventPool || []).length || (state.seededCards || []).length || (state.threats || []).length));
   }
 
-  function renderLocalNodes(centerId, visible) {
+  function renderLocalNodes(centerId, visible, camera) {
     const direct = new Set(connected(centerId));
     const walking = game.pendingNodeMove;
     return Object.entries(map().nodes).filter(([id]) => visible.has(id)).map(([id, def]) => {
-      const point = projectNode(id, centerId);
+      const point = projectNode(id, camera);
       if (!inViewport(point)) return "";
-      const current = id === centerId;
+      const current = id === centerId && !walking;
       const reachable = direct.has(id);
       const preview = !current && !reachable;
       const canMove = reachable && !game.awaitingResultAck && !game.activeEncounter && !walking;
@@ -148,13 +165,8 @@
     }).join("");
   }
 
-  function renderPlayerToken(centerId) {
-    const walking = game.pendingNodeMove;
-    const fromId = walking?.from || centerId;
-    const toId = walking?.to || fromId;
-    const from = projectNode(fromId, centerId);
-    const to = projectNode(toId, centerId);
-    return `<div class="gd-map-player-token ${walking ? "walking" : "idle"}" style="--walk-from-x:${from.x}%;--walk-from-y:${from.y}%;--walk-to-x:${to.x}%;--walk-to-y:${to.y}%"><span>♟</span></div>`;
+  function renderPlayerToken() {
+    return `<div class="gd-map-player-token ${game.pendingNodeMove ? "walking camera-centered" : "idle"}" style="left:50%;top:50%"><span>♟</span></div>`;
   }
 
   function renderEventHeroBar() {
@@ -165,19 +177,20 @@
     if (!hasMap()) return renderExplore();
     ensureNodeState?.();
     const move = game.pendingNodeMove;
+    const camera = cameraPoint();
     const centerId = move?.from || currentNodeId();
     const center = nodeDef(centerId);
     const state = nodeState(centerId);
     const visible = localSet(centerId);
     const tags = center.tags.slice(0, 4).map(tag => `<b>${tag}</b>`).join("");
-    const bgX = clamp(center.x, 12, 88);
-    const bgY = clamp(center.y, 12, 88);
+    const bgX = clamp(camera.x, 12, 88);
+    const bgY = clamp(camera.y, 12, 88);
     const hint = move ? `Moving to ${nodeDef(move.to)?.label}.` : (game.result || "Tap a connected node on the map to move.");
     return `<div class="gd-main-scroll gd-map-first-screen map-mode ${game.eventTransition || "active"}">
-      <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
+      <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${move ? nodeDef(move.to)?.label : center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
-        <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
-        <div class="gd-focused-node-map gd-node-map" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible)}${renderLocalNodes(centerId, visible)}${renderPlayerToken(centerId)}</div>
+        <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${move ? `To ${nodeDef(move.to)?.label}` : center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
+        <div class="gd-focused-node-map gd-node-map is-camera-following" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}</div>
         <div class="gd-node-current-readout"><span>Noise ${state.noise} · Danger ${state.danger} · ${chance(centerId)}% risk</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span></div>
       </section>
       <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}
@@ -207,6 +220,8 @@
   drawCardForNode = window.drawCardForNode;
 
   function completeMove(id) {
+    if (game.pendingMoveFrame) cancelAnimationFrame(game.pendingMoveFrame);
+    game.pendingMoveFrame = null;
     game.hero.currentNodeId = id;
     nodeState(id).visited = true;
     nodeState(id).visible = true;
@@ -224,12 +239,22 @@
     }
   }
 
+  function animateCameraMove() {
+    if (!game.pendingNodeMove) return;
+    render();
+    if (performance.now() - game.pendingNodeMove.startedAt < WALK_MS) {
+      game.pendingMoveFrame = requestAnimationFrame(animateCameraMove);
+    }
+  }
+
   window.moveHeroToNode = function moveHeroToNode(id) {
     const from = currentNodeId();
     if (!hasMap() || !nodeDef(id) || !connected(from).includes(id) || game.awaitingResultAck || game.activeEncounter || game.pendingNodeMove) return false;
-    game.pendingNodeMove = { from, to: id };
+    game.pendingNodeMove = { from, to: id, startedAt: performance.now() };
     game.result = `Moving to ${nodeDef(id).label}.`;
+    if (game.pendingMoveFrame) cancelAnimationFrame(game.pendingMoveFrame);
     render();
+    game.pendingMoveFrame = requestAnimationFrame(animateCameraMove);
     setTimeout(() => completeMove(id), WALK_MS);
     return true;
   };
@@ -262,6 +287,7 @@
 
   game.activeEncounter ||= null;
   game.pendingNodeMove ||= null;
+  game.pendingMoveFrame ||= null;
   game.eventTransition ||= null;
   if (game.activeTab === "event") game.activeTab = "explore";
   render?.();
