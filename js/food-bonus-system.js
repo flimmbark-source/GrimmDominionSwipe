@@ -1,19 +1,53 @@
-// Food system: each Food gives +5 to action rolls. At round end, lose 1 old Food if any.
+// Food system: Food is a healing resource only. At round end, lose 1 old Food if any and heal.
 (() => {
-  const FOOD_ROLL_BONUS = 5;
+  const foodHealPerUnit = () => window.GD_MODIFIERS?.food?.healsPerConsumedFood || 1;
 
   game.hero.foodGainedThisRound ||= 0;
-
-  const baseGetRollBonus = typeof getRollBonus === "function" ? getRollBonus : () => 0;
+  game.hero.foodUpkeepTickId ||= 0;
 
   window.getFoodRollBonus = function getFoodRollBonus() {
-    return Math.max(0, game?.hero?.food || 0) * FOOD_ROLL_BONUS;
+    return 0;
   };
 
-  window.getRollBonus = function getRollBonus(choiceData) {
-    return baseGetRollBonus(choiceData) + getFoodRollBonus();
+  const findFoodNode = () => [...document.querySelectorAll(".gd-resource b")]
+    .find(node => (node.textContent || "").includes("Food"));
+
+  const spawnFoodHealGhost = () => {
+    const source = findFoodNode();
+    const target = document.querySelector(".gd-inline-hp");
+    if (!source || !target) return;
+
+    const sourceRect = source.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const healAmount = foodHealPerUnit();
+    const ghost = document.createElement("div");
+    ghost.className = "gd-food-heal-ghost";
+    ghost.textContent = `+${healAmount}❤️`;
+    ghost.style.left = `${sourceRect.left + sourceRect.width / 2}px`;
+    ghost.style.top = `${sourceRect.top + sourceRect.height / 2}px`;
+    ghost.style.setProperty("--food-heal-target-x", `${targetRect.left + targetRect.width / 2}px`);
+    ghost.style.setProperty("--food-heal-target-y", `${targetRect.top + targetRect.height / 2}px`);
+    document.body.appendChild(ghost);
+
+    target.classList.remove("ghost-hp-pulse");
+    void target.offsetWidth;
+    target.classList.add("ghost-hp-pulse");
+    ghost.addEventListener("animationend", () => ghost.remove(), { once: true });
   };
-  getRollBonus = window.getRollBonus;
+
+  const applyFoodUpkeep = () => {
+    const protectedFood = Math.max(0, game.hero.foodGainedThisRound || 0);
+    const oldFood = Math.max(0, (game.hero.food || 0) - protectedFood);
+    if (oldFood > 0) {
+      const healAmount = foodHealPerUnit();
+      spawnFoodHealGhost();
+      game.hero.food = Math.max(0, game.hero.food - 1);
+      game.partyHealth = Math.min(10, game.partyHealth + healAmount);
+      game.log.unshift(`The Goblin eats 1 old Food and restores ${healAmount} Health before the next round.`);
+      syncPartyHeroSummary?.();
+    }
+    game.hero.foodGainedThisRound = 0;
+  };
 
   const baseApplyRewards = typeof applyRewards === "function" ? applyRewards : null;
   if (baseApplyRewards) {
@@ -30,48 +64,23 @@
     applyRewards = window.applyRewards;
   }
 
-  const baseResolveDarkLordPlan = typeof resolveDarkLordPlan === "function" ? resolveDarkLordPlan : null;
-  if (baseResolveDarkLordPlan) {
-    window.resolveDarkLordPlan = function resolveDarkLordPlan() {
-      baseResolveDarkLordPlan();
-      const protectedFood = Math.max(0, game.hero.foodGainedThisRound || 0);
-      const oldFood = Math.max(0, (game.hero.food || 0) - protectedFood);
-      if (oldFood > 0) {
-        game.hero.food = Math.max(0, game.hero.food - 1);
-        game.log.unshift("The Goblin eats 1 old Food before the next round.");
-        syncPartyHeroSummary?.();
+  const baseTick = typeof tick === "function" ? tick : null;
+  if (baseTick) {
+    window.tick = function tick() {
+      const beforeTimer = game.darkLordTimer;
+      baseTick();
+      const roundResetHappened = beforeTimer === 1 && game.darkLordTimer === 60;
+      if (roundResetHappened) {
+        game.hero.foodUpkeepTickId += 1;
+        applyFoodUpkeep();
+        render?.();
       }
-      game.hero.foodGainedThisRound = 0;
     };
-    resolveDarkLordPlan = window.resolveDarkLordPlan;
+    tick = window.tick;
+    if (typeof startTimers === "function") startTimers();
   }
 
-  const amount = (modifier) => {
-    if (typeof modifier.rollBonus === "number") return modifier.rollBonus;
-    if (typeof modifier.statBonus === "number") return modifier.statBonus * 5;
-    return 0;
-  };
-
-  const signed = (value) => value > 0 ? `+${value}` : `${value}`;
-
-  window.renderChoice = function renderChoice(side, choiceData) {
-    const baseStat = game.hero.stats[choiceData.stat] || 0;
-    const thresholds = calculateThresholds(baseStat, choiceData.difficulty);
-    const itemKnowledgeBonus = getChoiceModifiers(choiceData)
-      .map(amount)
-      .reduce((sum, value) => sum + value, 0);
-    const totalBonus = itemKnowledgeBonus + getFoodRollBonus();
-    const locked = game.heroTimer <= 0 || game.awaitingResultAck;
-    const chosen = game.lastAction?.side === side;
-    const bonusClass = totalBonus > 0 ? "positive" : totalBonus < 0 ? "negative" : "neutral";
-    const bonusChip = `<span class="gd-total-roll-bonus ${bonusClass}">${signed(totalBonus)}</span>`;
-    const tags = [...new Set(choiceData.tags || [])].slice(0, 5);
-    const tagIcons = tags.length && window.GD_TAG_ICONS
-      ? `<div class="gd-choice-tag-icons">${tags.map(tag => `<span title="${tag}">${window.GD_TAG_ICONS[tag] || "◇"}</span>`).join("")}</div>`
-      : "";
-    return `<button class="gd-choice ${side} ${locked ? "locked" : ""} ${chosen ? "chosen wink-out" : ""}" data-choice="${side}" ${locked ? "disabled" : ""}>${tagIcons}<div class="gd-choice-title">${choiceData.label}</div><div class="gd-choice-mid"><span>⌛ ${choiceData.timeCost}s</span>${bonusChip}</div><div class="gd-thresholds"><span class="gd-fail">☠ ${thresholds.red}</span><span class="gd-great">♛ ${thresholds.green}</span></div></button>`;
-  };
-  renderChoice = window.renderChoice;
+  window.applyFoodUpkeep = applyFoodUpkeep;
 
   if (typeof render === "function") render();
 })();

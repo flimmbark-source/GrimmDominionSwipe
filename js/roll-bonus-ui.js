@@ -1,22 +1,17 @@
-// Shows a single combined direct roll bonus on each action choice.
+// Shows the full combined direct roll bonus on each action choice.
 (() => {
-  const amount = (modifier) => {
-    if (typeof modifier.rollBonus === "number") return modifier.rollBonus;
-    if (typeof modifier.statBonus === "number") return modifier.statBonus * 5;
-    return 0;
-  };
-
   const originalRender = window.render;
   if (typeof originalRender !== "function") return;
 
   const signed = (value) => value > 0 ? `+${value}` : `${value}`;
+  const fullRollBonus = (choiceData) => typeof getRollBonus === "function"
+    ? getRollBonus(choiceData)
+    : getChoiceModifiers(choiceData).reduce((sum, modifier) => sum + (modifier.rollBonus || 0), 0);
 
   window.renderChoice = function renderChoice(side, choiceData) {
     const baseStat = game.hero.stats[choiceData.stat] || 0;
     const thresholds = calculateThresholds(baseStat, choiceData.difficulty);
-    const totalBonus = getChoiceModifiers(choiceData)
-      .map(amount)
-      .reduce((sum, value) => sum + value, 0);
+    const totalBonus = fullRollBonus(choiceData);
     const locked = game.heroTimer <= 0 || game.awaitingResultAck;
     const chosen = game.lastAction?.side === side;
     const bonusClass = totalBonus > 0 ? "positive" : totalBonus < 0 ? "negative" : "neutral";
