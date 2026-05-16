@@ -1,6 +1,7 @@
 // Map-first Explore flow: movement stays on the map; real encounters appear as an overlay, not a tab.
 (() => {
   const LOCAL_DEPTH = 2;
+  const LOCAL_ZOOM = 2.35;
   const NO_EVENT_CARD = "quiet_village_path";
 
   const hasMap = () => window.VILLAGE_NODE_MAP && game?.mapState?.village?.nodes;
@@ -35,6 +36,19 @@
     return seen;
   }
 
+  function projectNode(id, centerId) {
+    const center = nodeDef(centerId);
+    const def = nodeDef(id);
+    return {
+      x: 50 + (def.x - center.x) * LOCAL_ZOOM,
+      y: 50 + (def.y - center.y) * LOCAL_ZOOM,
+    };
+  }
+
+  function inViewport(point) {
+    return point.x >= -8 && point.x <= 108 && point.y >= -8 && point.y <= 108;
+  }
+
   function localEdges(centerId, visible) {
     const direct = new Set(connected(centerId));
     return Object.entries(map().nodes).flatMap(([id, def]) => {
@@ -43,8 +57,9 @@
         .filter(target => id < target && visible.has(target))
         .filter(target => id === centerId || target === centerId || direct.has(id) || direct.has(target))
         .map(target => {
-          const a = def;
-          const b = nodeDef(target);
+          const a = projectNode(id, centerId);
+          const b = projectNode(target, centerId);
+          if (!inViewport(a) && !inViewport(b)) return "";
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const length = Math.hypot(dx, dy);
@@ -67,10 +82,12 @@
   function renderLocalNodes(centerId, visible) {
     const direct = new Set(connected(centerId));
     return Object.entries(map().nodes).filter(([id]) => visible.has(id)).map(([id, def]) => {
+      const point = projectNode(id, centerId);
+      if (!inViewport(point)) return "";
       const current = id === centerId;
       const reachable = direct.has(id);
       const preview = !current && !reachable;
-      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${def.x}%;top:${def.y}%" ${reachable && !game.awaitingResultAck ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
+      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${reachable && !game.awaitingResultAck ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
     }).join("");
   }
 
@@ -99,11 +116,13 @@
     const state = nodeState(centerId);
     const visible = localSet(centerId);
     const tags = center.tags.slice(0, 4).map(tag => `<b>${tag}</b>`).join("");
+    const bgX = clamp(center.x, 12, 88);
+    const bgY = clamp(center.y, 12, 88);
     return `<div class="gd-main-scroll gd-map-first-screen">
       <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
-        <div class="gd-focused-node-map gd-node-map">${localEdges(centerId, visible)}${renderLocalNodes(centerId, visible)}</div>
+        <div class="gd-focused-node-map gd-node-map" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible)}${renderLocalNodes(centerId, visible)}</div>
         <div class="gd-node-current-readout"><span>Noise ${state.noise} · Danger ${state.danger} · ${chance(centerId)}% risk</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span></div>
         ${renderDestinations(centerId)}
       </section>
@@ -118,7 +137,6 @@
   };
   drawCardForNode = window.drawCardForNode;
 
-  const baseMove = window.moveHeroToNode;
   window.moveHeroToNode = function moveHeroToNode(id) {
     if (!hasMap() || !nodeDef(id) || !connected(currentNodeId()).includes(id) || game.awaitingResultAck || game.activeEncounter) return false;
     game.hero.currentNodeId = id;
