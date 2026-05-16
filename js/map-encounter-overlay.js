@@ -3,6 +3,7 @@
   const LOCAL_DEPTH = 2;
   const LOCAL_ZOOM = 2.35;
   const WALK_MS = 560;
+  const EVENT_EXIT_MS = 260;
   const NO_EVENT_CARD = "quiet_village_path";
 
   const hasMap = () => window.VILLAGE_NODE_MAP && game?.mapState?.village?.nodes;
@@ -57,11 +58,16 @@
   function openNodeEncounter(id, cardId = drawNodeEncounter(id)) {
     if (!cardId || !cards?.[cardId]) return false;
     game.pendingNodeMove = null;
+    game.eventTransition = "enter";
     game.currentCardId = cardId;
     game.activeEncounter = { nodeId: id, cardId };
     game.result = `Encounter at ${nodeDef(id)?.label || "Node"}: ${cards[cardId]?.title || "Event"}.`;
     game.log.unshift(game.result);
     render();
+    requestAnimationFrame(() => {
+      game.eventTransition = "active";
+      render();
+    });
     return true;
   }
 
@@ -159,12 +165,17 @@
     return `<div class="gd-map-player-token ${cls}" style="--walk-from-x:${from.x}%;--walk-from-y:${from.y}%;--walk-to-x:${to.x}%;--walk-to-y:${to.y}%"><span>♟</span></div>`;
   }
 
+  function renderGoblinOutlawBar() {
+    return `<section class="gd-event-hero-bar"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name} <span class="gd-inline-hp">♥ ${game.partyHealth}/10</span></div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold ${game.hero.resourceValue}<br><b>Food ${game.hero.food}</b></div></section>`;
+  }
+
   function renderEncounterOverlay() {
     if (!game.activeEncounter) return "";
     const card = cards[game.currentCardId];
     if (!card) return "";
     const badge = card.badge ? `<div class="gd-card-badge">${card.badge}</div>` : "";
-    return `<section class="gd-map-encounter-overlay"><div class="gd-map-encounter-scrim"></div><section class="gd-card gd-encounter-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section></section>`;
+    const transition = game.eventTransition || "active";
+    return `<section class="gd-map-encounter-overlay ${transition}"><div class="gd-map-encounter-scrim"></div><div class="gd-encounter-stack">${renderGoblinOutlawBar()}<section class="gd-card gd-encounter-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section></div></section>`;
   }
 
   window.renderMapFirstExplore = function renderMapFirstExplore() {
@@ -179,7 +190,7 @@
     const bgX = clamp(center.x, 12, 88);
     const bgY = clamp(center.y, 12, 88);
     const hint = move ? `Moving to ${nodeDef(move.to)?.label}.` : (game.result || "Tap a connected node on the map to move.");
-    return `<div class="gd-main-scroll gd-map-first-screen">
+    return `<div class="gd-main-scroll gd-map-first-screen ${game.activeEncounter ? "has-encounter" : ""}">
       <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
@@ -207,6 +218,7 @@
     if (!openNodeEncounter(id, cardId)) {
       game.currentCardId = null;
       game.activeEncounter = null;
+      game.eventTransition = null;
       game.result = `Moved to ${nodeDef(id).label}.`;
       game.log.unshift(game.result);
       render();
@@ -239,13 +251,20 @@
 
   const baseAck = acknowledgeResult;
   window.acknowledgeResult = function acknowledgeResult() {
-    baseAck();
-    if (!game.awaitingResultAck) {
-      game.activeEncounter = null;
-      game.currentCardId = null;
-      game.activeTab = "explore";
+    if (game.activeEncounter && game.resultReady) {
+      game.eventTransition = "exit";
       render();
+      setTimeout(() => {
+        baseAck();
+        game.activeEncounter = null;
+        game.currentCardId = null;
+        game.eventTransition = null;
+        game.activeTab = "explore";
+        render();
+      }, EVENT_EXIT_MS);
+      return;
     }
+    baseAck();
   };
   acknowledgeResult = window.acknowledgeResult;
 
@@ -253,6 +272,7 @@
 
   game.activeEncounter ||= null;
   game.pendingNodeMove ||= null;
+  game.eventTransition ||= null;
   if (game.activeTab === "event") game.activeTab = "explore";
   render?.();
 })();
