@@ -13,12 +13,45 @@
   const currentNodeId = () => game.hero.currentNodeId || map()?.startNodeId;
   const moveCost = id => nodeDef(id)?.tags?.includes("exposed") ? 2 : 1;
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const validCards = pool => (pool || []).filter(id => id && id !== NO_EVENT_CARD && cards?.[id]);
+  const pick = pool => pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
 
   function chance(id) {
     const def = nodeDef(id);
     const state = nodeState(id);
     if (!def || !state) return 0;
     return clamp((def.encounterChance || 0) + state.noise * 5 + state.danger * 8 + state.corruption * 6 + state.threats.length * 10, 0, 85);
+  }
+
+  function fallbackCardForNode(def) {
+    if (!def) return null;
+    const tags = new Set([def.kind, ...(def.tags || [])]);
+    const ordered = [];
+    if (tags.has("house")) ordered.push("village_house_window", "baker_backdoor", "apothecary_drawer");
+    if (tags.has("food") || tags.has("shed")) ordered.push("hidden_pantry", "baker_backdoor");
+    if (tags.has("market")) ordered.push("market_stall", "shrine_vendor", "false_cache");
+    if (tags.has("well") || tags.has("water")) ordered.push("well_bucket", "plague_well", "sewer_grate");
+    if (tags.has("sewer") || tags.has("tunnel")) ordered.push("sewer_grate", "drain_crawl", "secret_tunnel");
+    if (tags.has("shrine") || tags.has("spirit") || tags.has("magic")) ordered.push("shrine_vendor", "grave_bell", "whispering_idol");
+    if (tags.has("guard") || tags.has("patrol")) ordered.push("guard_post", "watch_patrol", "scout_sniffs_path");
+    if (tags.has("kennel") || tags.has("hounds")) ordered.push("kennel_yard", "hound_pack");
+    if (tags.has("forest") || tags.has("route") || tags.has("path")) ordered.push("secret_route", "scout_sniffs_path", "bloodroot");
+    return pick(validCards(ordered));
+  }
+
+  function drawNodeEncounter(id) {
+    const def = nodeDef(id);
+    const state = nodeState(id);
+    if (!def || !state) return null;
+    const threatCards = (state.threats || []).map(threatId => DARK_THREATS?.[threatId]?.cardId);
+    const direct = validCards([...(state.seededCards || []), ...threatCards, ...(def.eventPool || [])]);
+    if (direct.length) return pick(direct);
+    if ((def.eventPool || []).length) return fallbackCardForNode(def);
+    if (Math.random() * 100 < chance(id)) {
+      const random = validCards(def.randomPool || []);
+      return pick(random) || fallbackCardForNode(def);
+    }
+    return null;
   }
 
   function localSet(centerId) {
@@ -128,10 +161,8 @@
     </div>`;
   };
 
-  const baseDrawCardForNode = window.drawCardForNode;
   window.drawCardForNode = function drawCardForNode(id) {
-    const cardId = baseDrawCardForNode?.(id);
-    return cardId === NO_EVENT_CARD ? null : cardId;
+    return drawNodeEncounter(id);
   };
   drawCardForNode = window.drawCardForNode;
 
@@ -146,7 +177,7 @@
     if (cardId) {
       game.currentCardId = cardId;
       game.activeEncounter = { nodeId: id, cardId };
-      game.result = `Encounter at ${nodeDef(id).label}.`;
+      game.result = `Encounter at ${nodeDef(id).label}: ${cards[cardId]?.title || "Event"}.`;
     } else {
       game.currentCardId = null;
       game.activeEncounter = null;
