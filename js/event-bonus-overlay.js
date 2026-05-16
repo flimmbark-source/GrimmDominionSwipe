@@ -1,4 +1,4 @@
-// Shows action bonus sources over the event image, aligned to the side they help.
+// Shows action bonus sources and total roll bonus over the event image, aligned to the side they help.
 (() => {
   const amount = (modifier) => {
     if (typeof modifier.rollBonus === "number") return modifier.rollBonus;
@@ -6,7 +6,11 @@
     return 0;
   };
 
+  const signed = (value) => value > 0 ? `+${value}` : `${value}`;
   const modifierName = (modifier) => modifier.itemName || modifier.name || modifier.label?.replace(/^[^A-Za-z0-9]+\s*/, "").replace(/\s*[+-]\d+$/, "") || "Bonus";
+  const totalBonusFor = (choiceData) => typeof getRollBonus === "function"
+    ? getRollBonus(choiceData)
+    : getChoiceModifiers(choiceData).reduce((sum, modifier) => sum + amount(modifier), 0);
 
   const sourceRows = (choiceData) => getChoiceModifiers(choiceData)
     .map(modifier => ({ name: modifierName(modifier), bonus: amount(modifier) }))
@@ -15,8 +19,10 @@
 
   const renderSourceList = (side, choiceData) => {
     const rows = sourceRows(choiceData);
-    if (!rows.length) return "";
-    return `<div class="gd-art-bonus-list ${side}">${rows.map(row => `<div class="gd-art-bonus-chip"><b>${row.name}</b><span>${row.bonus > 0 ? "+" : ""}${row.bonus}</span></div>`).join("")}</div>`;
+    const total = totalBonusFor(choiceData);
+    const totalClass = total > 0 ? "positive" : total < 0 ? "negative" : "neutral";
+    if (!rows.length && total === 0) return "";
+    return `<div class="gd-art-bonus-list ${side}">${rows.map(row => `<div class="gd-art-bonus-chip"><b>${row.name}</b><span>${signed(row.bonus)}</span></div>`).join("")}<div class="gd-art-total-bonus ${totalClass}"><small>Total</small><b>${signed(total)}</b></div></div>`;
   };
 
   const patchEventArt = () => {
