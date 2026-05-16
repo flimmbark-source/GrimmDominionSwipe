@@ -18,13 +18,13 @@
   window.updateTimerDom = updateTimerDom;
 
   window.tick = function tick() {
-    const beforeDarkTimer = game.darkLordTimer;
     game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
 
     if (game.darkLordTimer === 0) {
       if (typeof resultReadyTimeoutId !== "undefined" && resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
       resultReadyTimeoutId = null;
       resolveDarkLordPlan();
+      if (typeof applyFoodUpkeep === "function") applyFoodUpkeep();
       game.darkLordTimer = 60;
       game.heroTimer = 40;
       game.awaitingResultAck = false;
