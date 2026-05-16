@@ -1,0 +1,76 @@
+.gd-choice-panel {
+  position: relative;
+  overflow: visible;
+}
+
+.gd-difficulty-easy {
+  /* Easy intentionally keeps the current clean edge. */
+}
+
+.gd-difficulty-medium {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: #7a6237 !important;
+  box-shadow:
+    0 0 0 1px #1b160d,
+    0 0 10px rgba(226, 182, 77, .16),
+    inset 0 0 16px #000 !important;
+}
+
+.gd-difficulty-medium::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .72;
+  background:
+    linear-gradient(135deg, transparent 0 8px, #7a6237 8px 10px, transparent 10px 22px),
+    linear-gradient(45deg, transparent 0 7px, #5f4c2d 7px 9px, transparent 9px 20px);
+  background-size: 21px 14px, 19px 13px;
+  clip-path: polygon(2% 8%, 10% 0, 22% 6%, 34% 0, 46% 7%, 58% 1%, 70% 8%, 83% 1%, 98% 7%, 100% 92%, 90% 100%, 76% 94%, 63% 100%, 50% 93%, 37% 100%, 24% 94%, 11% 100%, 0 92%);
+}
+
+.gd-difficulty-hard {
+  border-width: 2px !important;
+  border-color: #a74725 !important;
+  background:
+    linear-gradient(135deg, rgba(60, 15, 9, .45), transparent 42%),
+    var(--gd-panel, #0a0b08) !important;
+  box-shadow:
+    0 0 16px rgba(216, 69, 32, .36),
+    0 0 26px rgba(255, 132, 42, .14),
+    inset 0 0 18px #000 !important;
+}
+
+.gd-difficulty-hard::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .78;
+  background:
+    radial-gradient(circle at 8% 15%, rgba(255, 126, 39, .82) 0 8%, transparent 10%),
+    radial-gradient(circle at 24% 92%, rgba(184, 43, 28, .82) 0 10%, transparent 12%),
+    radial-gradient(circle at 48% 8%, rgba(255, 168, 54, .72) 0 8%, transparent 10%),
+    radial-gradient(circle at 70% 94%, rgba(205, 55, 26, .76) 0 11%, transparent 13%),
+    radial-gradient(circle at 93% 16%, rgba(255, 126, 39, .78) 0 9%, transparent 11%);
+  filter: blur(.2px) drop-shadow(0 0 8px rgba(255, 97, 38, .45));
+  clip-path: polygon(0 18%, 6% 0, 13% 15%, 22% 2%, 29% 19%, 39% 0, 48% 18%, 58% 3%, 66% 20%, 77% 0, 84% 16%, 94% 2%, 100% 21%, 100% 83%, 94% 100%, 84% 83%, 75% 100%, 66% 82%, 56% 99%, 48% 80%, 38% 100%, 29% 82%, 19% 98%, 12% 81%, 4% 100%, 0 84%);
+}
+
+.gd-difficulty-hard .gd-choice-title {
+  color: #ffd48a;
+  text-shadow: 0 0 8px rgba(255, 111, 48, .35), 0 1px 0 #000;
+}
+
+@media (max-height: 700px) {
+  .gd-difficulty-medium::before {
+    inset: -3px;
+  }
+
+  .gd-difficulty-hard::before {
+    inset: -4px;
+  }
+}
