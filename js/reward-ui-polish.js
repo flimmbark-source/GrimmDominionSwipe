@@ -1,47 +1,18 @@
 // Polishes reward-return presentation without changing the swipe interaction.
 (() => {
-  const ICONS = {
-    "Lockpick Set": "🗝",
-    "Rope Hook": "🪝",
-    "Soot Cloak": "◒",
-    "House Key": "🗝",
-    "Torch Kit": "🔥",
-    "Scout Horn": "♬",
-    "Warding Charm": "✦",
-    "Lantern": "☼",
-  };
-
-  const KNOWLEDGE = {
-    "Inside": { icon: "⌂", tags: ["house", "entry"], rollBonus: 3 },
-    "Shortcut": { icon: "↝", tags: ["route", "escape"], rollBonus: 4 },
-    "Theft": { icon: "●", tags: ["theft"], rollBonus: 3 },
-    "Clean Theft": { icon: "●", tags: ["theft", "lock", "quiet"], rollBonus: 6 },
-    "Village Secrets": { icon: "✦", tags: ["food", "house", "search", "village"], rollBonus: 5 },
-    "Scout Down": { icon: "⚔", tags: ["scout", "combat"], rollBonus: 4 },
-    "Silent Kill": { icon: "☠", tags: ["combat", "scout", "stealth"], rollBonus: 7 },
-    "Patience": { icon: "◉", tags: ["stealth", "hide", "patrol"], rollBonus: 4 },
-    "High Path": { icon: "↟", tags: ["roof", "climb", "route"], rollBonus: 5 },
-    "Blend In": { icon: "◒", tags: ["stealth", "crowd", "smoke", "hide"], rollBonus: 6 },
-    "Escape Route": { icon: "↝", tags: ["route", "escape", "stealth"], rollBonus: 6 },
-    "Secret Path": { icon: "✦", tags: ["route", "spirit", "magic"], rollBonus: 7 },
-    "Marked Route": { icon: "↝", tags: ["route", "escape", "mark"], rollBonus: 4 },
-    "Intimidate": { icon: "⚔", tags: ["combat", "intimidate", "lure"], rollBonus: 5 },
-    "Broken Seal": { icon: "⛓", tags: ["magic", "spirit", "route", "escape"], rollBonus: 6 },
-    "Trap Sense": { icon: "◉", tags: ["trap", "stealth", "hide"], rollBonus: 5 },
-    "Trap Cut": { icon: "▣", tags: ["trap", "tool", "cunning"], rollBonus: 4 },
-    "Resisted Curse": { icon: "✦", tags: ["spirit", "magic"], rollBonus: 5 },
-  };
-
-  const originalRender = window.render;
-  if (typeof originalRender !== "function") return;
+  const knowledgeDefs = () => window.GD_MODIFIERS?.knowledge || {};
 
   const compactBonusLabels = () => {
     if (typeof ITEM_BONUSES === "undefined") return;
-    Object.entries(ITEM_BONUSES).forEach(([name, bonus]) => {
-      bonus.icon = bonus.icon || ICONS[name] || "▣";
-      bonus.rollBonus = typeof bonus.rollBonus === "number" ? bonus.rollBonus : Math.min(10, Math.max(1, bonus.statBonus || 1));
-      delete bonus.statBonus;
-      bonus.label = `${bonus.icon} +${bonus.rollBonus}`;
+    Object.entries(window.GD_MODIFIERS?.items || {}).forEach(([name, def]) => {
+      ITEM_BONUSES[name] = {
+        ...(ITEM_BONUSES[name] || {}),
+        icon: def.icon,
+        tags: def.tags,
+        rollBonus: def.rollBonus,
+        label: `${def.icon} +${def.rollBonus}`,
+      };
+      delete ITEM_BONUSES[name].statBonus;
     });
   };
 
@@ -51,15 +22,7 @@
     const originalGetChoiceModifiers = getChoiceModifiers;
     window.getChoiceModifiers = function(choiceData) {
       const itemModifiers = originalGetChoiceModifiers(choiceData) || [];
-      const knowledgeModifiers = Object.entries(KNOWLEDGE)
-        .filter(([name]) => game?.hero?.knowledge?.includes(name))
-        .map(([name, bonus]) => ({
-          itemName: name,
-          ...bonus,
-          label: `${bonus.icon} +${bonus.rollBonus}`,
-          source: "knowledge",
-        }))
-        .filter(bonus => bonus.tags.some(tag => choiceData.tags?.includes(tag)));
+      const knowledgeModifiers = window.GD_MODIFIERS?.knowledgeModifiersForChoice(game?.hero?.knowledge || [], choiceData) || [];
       return [...itemModifiers, ...knowledgeModifiers];
     };
     getChoiceModifiers = window.getChoiceModifiers;
@@ -70,12 +33,12 @@
       panel.textContent?.includes("Stats")
     );
     if (!statsPanel || statsPanel.querySelector(".gd-knowledge-list")) return;
-    const earned = Array.from(new Set((game?.hero?.knowledge || []).filter(name => KNOWLEDGE[name])));
+    const earned = Array.from(new Set((game?.hero?.knowledge || []).filter(name => knowledgeDefs()[name])));
     if (!earned.length) return;
     const list = document.createElement("div");
     list.className = "gd-knowledge-list";
     list.innerHTML = earned.map(name => {
-      const info = KNOWLEDGE[name];
+      const info = knowledgeDefs()[name];
       const turns = game?.hero?.knowledgeTurns?.[name];
       const duration = turns ? `<strong class="gd-knowledge-duration">${turns}</strong>` : "";
       return `<div class="gd-knowledge-chip"><span>${info.icon}</span><b>${name}</b><em>${info.icon} +${info.rollBonus}</em>${duration}</div>`;
@@ -91,6 +54,9 @@
     return result;
   };
 
+  const originalRender = window.render;
+  if (typeof originalRender !== "function") return;
+
   window.render = enhancedRender;
   compactBonusLabels();
   patchKnowledgeModifiers();
@@ -99,7 +65,7 @@
   if (typeof originalApplyRewards === "function") {
     window.applyRewards = function(rewards = []) {
       const knowledgeRewards = rewards
-        .filter(reward => reward.type === "xp" && KNOWLEDGE[reward.label])
+        .filter(reward => reward.type === "xp" && knowledgeDefs()[reward.label])
         .map(reward => reward.label);
       const result = originalApplyRewards.call(this, rewards);
       if (knowledgeRewards.length) {
