@@ -41,7 +41,7 @@
     "Resisted Curse": { icon: "✦", tags: ["spirit", "magic"], rollBonus: 5, duration: 6 },
   };
 
-  const FOOD = { rollBonusPerUnit: 5 };
+  const FOOD = { rollBonusPerUnit: 0, healsPerConsumedFood: 1 };
   const DEFAULT_KNOWLEDGE_DURATION = 5;
 
   const normalizeModifier = (name, def, source) => ({
