@@ -1,46 +1,29 @@
 // Hero stat modifier chips such as Clean Theft / Marked Route now have usage-based durations.
 (() => {
-  const DEFAULT_KNOWLEDGE_DURATION = 5;
-  const KNOWLEDGE_DURATIONS = {
-    "Inside": 5,
-    "Shortcut": 5,
-    "Theft": 5,
-    "Clean Theft": 6,
-    "Village Secrets": 6,
-    "Scout Down": 5,
-    "Silent Kill": 6,
-    "Patience": 5,
-    "High Path": 6,
-    "Blend In": 5,
-    "Escape Route": 6,
-    "Secret Path": 7,
-    "Marked Route": 5,
-    "Intimidate": 5,
-    "Broken Seal": 6,
-    "Trap Sense": 5,
-    "Trap Cut": 5,
-    "Resisted Curse": 6,
-  };
+  const defaultDuration = () => window.GD_MODIFIERS?.defaultKnowledgeDuration || 5;
+  const durationFor = (name) => window.GD_MODIFIERS?.knowledgeDuration?.(name) || defaultDuration();
+  const isKnownModifier = (name) => window.GD_MODIFIERS?.knownKnowledge?.(name) || false;
 
   const ensureKnowledgeTurns = () => {
     game.hero.knowledgeTurns ||= {};
     game.hero.knowledge ||= [];
+    game.hero.knowledge = game.hero.knowledge.filter(name => isKnownModifier(name));
     game.hero.knowledge.forEach(name => {
       if (!game.hero.knowledgeTurns[name]) {
-        game.hero.knowledgeTurns[name] = KNOWLEDGE_DURATIONS[name] || DEFAULT_KNOWLEDGE_DURATION;
+        game.hero.knowledgeTurns[name] = durationFor(name);
       }
     });
     game.hero.knowledge = game.hero.knowledge.filter(name => (game.hero.knowledgeTurns[name] || 0) > 0);
   };
 
   const addTimedKnowledge = (name) => {
+    if (!isKnownModifier(name)) return;
     game.hero.knowledge ||= [];
     game.hero.knowledgeTurns ||= {};
     game.hero.knowledgeAcquiredThisAction ||= [];
     if (!game.hero.knowledge.includes(name)) game.hero.knowledge.push(name);
     if (!game.hero.knowledgeAcquiredThisAction.includes(name)) game.hero.knowledgeAcquiredThisAction.push(name);
-    const duration = KNOWLEDGE_DURATIONS[name] || DEFAULT_KNOWLEDGE_DURATION;
-    game.hero.knowledgeTurns[name] = Math.max(game.hero.knowledgeTurns[name] || 0, duration);
+    game.hero.knowledgeTurns[name] = Math.max(game.hero.knowledgeTurns[name] || 0, durationFor(name));
   };
 
   const tickSpecificKnowledgeDurations = (usedNames = [], skipNames = []) => {
