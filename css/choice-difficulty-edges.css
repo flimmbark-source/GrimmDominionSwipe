@@ -1,76 +1,95 @@
 .gd-choice-panel {
   position: relative;
   overflow: visible;
+  isolation: isolate;
 }
 
 .gd-difficulty-easy {
   /* Easy intentionally keeps the current clean edge. */
 }
 
-.gd-difficulty-medium {
-  border-width: 2px !important;
-  border-style: solid !important;
-  border-color: #7a6237 !important;
-  box-shadow:
-    0 0 0 1px #1b160d,
-    0 0 10px rgba(226, 182, 77, .16),
-    inset 0 0 16px #000 !important;
-}
-
-.gd-difficulty-medium::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  z-index: -1;
-  pointer-events: none;
-  opacity: .72;
-  background:
-    linear-gradient(135deg, transparent 0 8px, #7a6237 8px 10px, transparent 10px 22px),
-    linear-gradient(45deg, transparent 0 7px, #5f4c2d 7px 9px, transparent 9px 20px);
-  background-size: 21px 14px, 19px 13px;
-  clip-path: polygon(2% 8%, 10% 0, 22% 6%, 34% 0, 46% 7%, 58% 1%, 70% 8%, 83% 1%, 98% 7%, 100% 92%, 90% 100%, 76% 94%, 63% 100%, 50% 93%, 37% 100%, 24% 94%, 11% 100%, 0 92%);
-}
-
+.gd-difficulty-medium,
 .gd-difficulty-hard {
-  border-width: 2px !important;
-  border-color: #a74725 !important;
-  background:
-    linear-gradient(135deg, rgba(60, 15, 9, .45), transparent 42%),
-    var(--gd-panel, #0a0b08) !important;
-  box-shadow:
-    0 0 16px rgba(216, 69, 32, .36),
-    0 0 26px rgba(255, 132, 42, .14),
-    inset 0 0 18px #000 !important;
+  border-color: #4f4630 !important;
+  box-shadow: inset 0 0 16px #000 !important;
 }
 
+.gd-difficulty-medium::before,
 .gd-difficulty-hard::before {
   content: "";
   position: absolute;
-  inset: -6px;
-  z-index: -1;
   pointer-events: none;
-  opacity: .78;
-  background:
-    radial-gradient(circle at 8% 15%, rgba(255, 126, 39, .82) 0 8%, transparent 10%),
-    radial-gradient(circle at 24% 92%, rgba(184, 43, 28, .82) 0 10%, transparent 12%),
-    radial-gradient(circle at 48% 8%, rgba(255, 168, 54, .72) 0 8%, transparent 10%),
-    radial-gradient(circle at 70% 94%, rgba(205, 55, 26, .76) 0 11%, transparent 13%),
-    radial-gradient(circle at 93% 16%, rgba(255, 126, 39, .78) 0 9%, transparent 11%);
-  filter: blur(.2px) drop-shadow(0 0 8px rgba(255, 97, 38, .45));
-  clip-path: polygon(0 18%, 6% 0, 13% 15%, 22% 2%, 29% 19%, 39% 0, 48% 18%, 58% 3%, 66% 20%, 77% 0, 84% 16%, 94% 2%, 100% 21%, 100% 83%, 94% 100%, 84% 83%, 75% 100%, 66% 82%, 56% 99%, 48% 80%, 38% 100%, 29% 82%, 19% 98%, 12% 81%, 4% 100%, 0 84%);
+  opacity: 1;
+  z-index: 2;
 }
 
-.gd-difficulty-hard .gd-choice-title {
-  color: #ffd48a;
-  text-shadow: 0 0 8px rgba(255, 111, 48, .35), 0 1px 0 #000;
+.gd-difficulty-medium::before {
+  inset: -5px;
+  border: 2px solid #8a6f3e;
+  clip-path: polygon(0 10%, 8% 0, 18% 8%, 30% 0, 42% 7%, 55% 0, 68% 8%, 82% 0, 100% 10%, 94% 22%, 100% 36%, 93% 50%, 100% 65%, 94% 80%, 100% 92%, 86% 100%, 72% 93%, 58% 100%, 45% 92%, 31% 100%, 17% 93%, 0 100%, 7% 84%, 0 69%, 8% 53%, 0 37%, 7% 22%);
+  box-shadow:
+    0 0 0 1px #16120a,
+    0 0 10px rgba(226, 182, 77, .24);
+}
+
+.gd-difficulty-medium::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 2;
+  pointer-events: none;
+  border: 1px dashed rgba(226, 182, 77, .44);
+  clip-path: polygon(2% 8%, 13% 2%, 26% 7%, 39% 1%, 53% 8%, 66% 2%, 79% 7%, 98% 4%, 96% 96%, 82% 92%, 68% 98%, 54% 91%, 40% 98%, 26% 92%, 12% 98%, 3% 92%);
+}
+
+.gd-difficulty-hard {
+  background: inherit !important;
+}
+
+.gd-difficulty-hard::before {
+  inset: -7px;
+  border: 2px solid #b64b25;
+  clip-path: polygon(0 20%, 5% 4%, 11% 18%, 18% 0, 25% 21%, 34% 3%, 42% 19%, 52% 0, 60% 21%, 69% 4%, 77% 18%, 88% 0, 94% 17%, 100% 5%, 100% 95%, 93% 82%, 87% 100%, 78% 80%, 70% 97%, 61% 79%, 52% 100%, 43% 80%, 35% 97%, 26% 79%, 18% 100%, 10% 82%, 3% 96%);
+  box-shadow:
+    0 0 10px rgba(255, 111, 48, .55),
+    0 0 20px rgba(255, 132, 42, .25);
+}
+
+.gd-difficulty-hard::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: .9;
+  background:
+    radial-gradient(circle at 9% 12%, rgba(255, 139, 41, .9) 0 5px, transparent 7px),
+    radial-gradient(circle at 24% 96%, rgba(194, 44, 27, .85) 0 6px, transparent 8px),
+    radial-gradient(circle at 49% 5%, rgba(255, 176, 57, .8) 0 5px, transparent 7px),
+    radial-gradient(circle at 72% 96%, rgba(215, 61, 28, .82) 0 7px, transparent 9px),
+    radial-gradient(circle at 94% 14%, rgba(255, 132, 42, .86) 0 5px, transparent 7px);
+  filter: drop-shadow(0 0 8px rgba(255, 97, 38, .45));
+}
+
+.gd-choice-panel > * {
+  position: relative;
+  z-index: 3;
 }
 
 @media (max-height: 700px) {
   .gd-difficulty-medium::before {
-    inset: -3px;
+    inset: -4px;
+  }
+
+  .gd-difficulty-medium::after {
+    inset: -2px;
   }
 
   .gd-difficulty-hard::before {
-    inset: -4px;
+    inset: -5px;
+  }
+
+  .gd-difficulty-hard::after {
+    inset: -6px;
   }
 }
