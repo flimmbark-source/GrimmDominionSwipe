@@ -24,17 +24,11 @@
   };
 
   const resetCard = (card) => {
-    card.classList.remove("is-swiping", "swipe-left", "swipe-right", "swipe-ready", "swipe-confirm-left", "swipe-confirm-right");
+    card.classList.remove("is-swiping", "swipe-left", "swipe-right", "swipe-ready", "swipe-confirm-left", "swipe-confirm-right", "result-card-swiping", "result-card-confirm-left", "result-card-confirm-right");
     card.dataset.swipeSide = "neutral";
     card.style.setProperty("--swipe-x", "0px");
     card.style.setProperty("--swipe-rotate", "0deg");
     card.style.setProperty("--swipe-progress", "0");
-  };
-
-  const resetResult = (node) => {
-    node.classList.remove("gd-result-swiping", "gd-result-confirm-left", "gd-result-confirm-right");
-    node.style.setProperty("--result-swipe-x", "0px");
-    node.style.setProperty("--result-swipe-rotate", "0deg");
   };
 
   const flushPendingRender = () => {
@@ -58,30 +52,31 @@
     window.setTimeout(finish, CONFIRM_MS + 80);
   };
 
-  const acknowledgeAfterResultSlide = (node, side) => {
+  const acknowledgeAfterResultSlide = (card, side) => {
     let resolved = false;
     const finish = () => {
       if (resolved) return;
       resolved = true;
-      node.removeEventListener("transitionend", onTransitionEnd);
+      card.removeEventListener("transitionend", onTransitionEnd);
       acknowledgeResult();
     };
     const onTransitionEnd = (event) => {
-      if (event.target === node && event.propertyName === "transform") finish();
+      if (event.target === card && event.propertyName === "transform") finish();
     };
-    node.classList.add(side === "left" ? "gd-result-confirm-left" : "gd-result-confirm-right");
-    node.addEventListener("transitionend", onTransitionEnd);
+    card.classList.add(side === "left" ? "result-card-confirm-left" : "result-card-confirm-right");
+    card.addEventListener("transitionend", onTransitionEnd);
     window.setTimeout(finish, CONFIRM_MS + 120);
   };
 
   const bindResultSwipe = () => {
+    const card = document.querySelector(".gd-card");
     const result = document.querySelector(".gd-action-result");
-    if (!result || result.dataset.resultSwipeBound) return;
-    result.dataset.resultSwipeBound = "true";
-    resetResult(result);
+    if (!card || !result || card.dataset.resultSwipeBound) return;
+    card.dataset.resultSwipeBound = "true";
 
-    result.addEventListener("pointerdown", (event) => {
+    card.addEventListener("pointerdown", (event) => {
       if (!game.awaitingResultAck || !game.resultReady) return;
+      if (event.target.closest("[data-ack-result]") && event.pointerType === "mouse" && event.detail > 1) return;
       event.preventDefault();
       resultState = {
         pointerId: event.pointerId,
@@ -89,46 +84,49 @@
         startY: event.clientY,
         dx: 0,
         dy: 0,
-        node: result,
+        card,
       };
-      result.setPointerCapture?.(event.pointerId);
-      result.classList.add("gd-result-swiping");
+      card.setPointerCapture?.(event.pointerId);
+      card.classList.add("result-card-swiping");
     }, { passive: false });
 
-    result.addEventListener("pointermove", (event) => {
-      if (!resultState || resultState.pointerId !== event.pointerId || resultState.node !== result) return;
+    card.addEventListener("pointermove", (event) => {
+      if (!resultState || resultState.pointerId !== event.pointerId || resultState.card !== card) return;
       resultState.dx = event.clientX - resultState.startX;
       resultState.dy = event.clientY - resultState.startY;
       if (Math.abs(resultState.dx) < 4 && Math.abs(resultState.dy) < 4) return;
       event.preventDefault();
-      const drag = clampDrag(resultState.dx);
-      result.style.setProperty("--result-swipe-x", `${drag}px`);
-      result.style.setProperty("--result-swipe-rotate", `${drag * 0.035}deg`);
+      setCardDrag(card, resultState.dx, true);
+      card.classList.add("result-card-swiping");
     }, { passive: false });
 
     const endResultSwipe = (event) => {
-      if (!resultState || resultState.pointerId !== event.pointerId || resultState.node !== result) return;
+      if (!resultState || resultState.pointerId !== event.pointerId || resultState.card !== card) return;
       event.preventDefault();
       const dx = resultState.dx;
       const dy = resultState.dy;
       const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.1;
+      const didDrag = Math.abs(dx) > 8 || Math.abs(dy) > 8;
       const side = dx < 0 ? "left" : "right";
       resultState = null;
-      result.releasePointerCapture?.(event.pointerId);
-      result.classList.remove("gd-result-swiping");
+      card.releasePointerCapture?.(event.pointerId);
+      card.classList.remove("result-card-swiping", "is-swiping");
 
       if (isHorizontal && Math.abs(dx) >= SWIPE_THRESHOLD && game.awaitingResultAck && game.resultReady) {
-        acknowledgeAfterResultSlide(result, side);
+        acknowledgeAfterResultSlide(card, side);
       } else {
-        resetResult(result);
+        resetCard(card);
+        if (!didDrag && game.awaitingResultAck && game.resultReady && event.target.closest("[data-ack-result]")) {
+          acknowledgeResult();
+        }
       }
     };
 
-    result.addEventListener("pointerup", endResultSwipe, { passive: false });
-    result.addEventListener("pointercancel", (event) => {
+    card.addEventListener("pointerup", endResultSwipe, { passive: false });
+    card.addEventListener("pointercancel", (event) => {
       if (resultState?.pointerId === event.pointerId) {
         resultState = null;
-        resetResult(result);
+        resetCard(card);
       }
     });
   };
