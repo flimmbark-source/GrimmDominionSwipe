@@ -1,7 +1,7 @@
-// Tuning: all choice difficulties are treated as +4 harder in the odds equation.
+// Tuning: all choice difficulties are treated as +2 harder in the odds equation.
 (() => {
   window.STAT_ODDS_STEP = 10;
-  window.CHOICE_DIFFICULTY_OFFSET = 4;
+  window.CHOICE_DIFFICULTY_OFFSET = 2;
 
   window.effectiveChoiceDifficulty = function effectiveChoiceDifficulty(difficulty = 0) {
     return difficulty + (window.CHOICE_DIFFICULTY_OFFSET || 0);
