@@ -105,6 +105,16 @@
     return "";
   }
 
+  function hasGuaranteedEvent(id) {
+    const def = nodeDef(id);
+    const state = nodeState(id);
+    if (!def || !state) return false;
+    if ((def.eventPool || []).length) return true;
+    if ((state.seededCards || []).length) return true;
+    if ((state.threats || []).length) return true;
+    return false;
+  }
+
   function renderLocalNodes(centerId, visible) {
     const direct = new Set(connected(centerId));
     const walking = game.pendingNodeMove;
@@ -116,7 +126,8 @@
       const preview = !current && !reachable;
       const walkingTo = walking?.to === id;
       const walkingFrom = walking?.from === id;
-      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${walkingTo ? "walk-target" : ""} ${walkingFrom ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${reachable && !game.awaitingResultAck && !game.activeEncounter && !walking ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
+      const eventNode = hasGuaranteedEvent(id);
+      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${eventNode ? "event-node" : ""} ${walkingTo ? "walk-target" : ""} ${walkingFrom ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${reachable && !game.awaitingResultAck && !game.activeEncounter && !walking ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
     }).join("");
   }
 
@@ -173,6 +184,7 @@
     connected(id).forEach(next => nodeState(next).visible = true);
     game.heroTimer = Math.max(0, game.heroTimer - moveCost(id));
     const cardId = window.drawCardForNode(id);
+    console.info("[node-event]", { nodeId: id, node: nodeDef(id)?.label, cardId, card: cardId ? cards[cardId]?.title : null });
     game.pendingNodeMove = null;
     if (cardId) {
       game.currentCardId = cardId;
@@ -226,12 +238,18 @@
   const baseBind = bindEvents;
   window.bindEvents = function bindEvents() {
     baseBind();
-    document.querySelectorAll(".gd-focused-map-card [data-node-id]").forEach(button => {
-      button.addEventListener("click", event => {
+    const focusedMap = document.querySelector(".gd-focused-map-card");
+    if (focusedMap && !focusedMap.dataset.encounterCaptureBound) {
+      focusedMap.dataset.encounterCaptureBound = "true";
+      focusedMap.addEventListener("click", event => {
+        const button = event.target.closest("[data-node-id]");
+        if (!button || button.disabled) return;
+        event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
         window.moveHeroToNode(button.dataset.nodeId);
-      });
-    });
+      }, true);
+    }
   };
   bindEvents = window.bindEvents;
 
