@@ -4,6 +4,12 @@
   animation: gd-screen-in 220ms ease-out both;
 }
 
+.gd-map-event-screen {
+  display: grid !important;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto !important;
+  overflow: hidden !important;
+}
+
 .gd-map-event-screen.enter {
   animation: gd-event-in 240ms cubic-bezier(.2,.9,.2,1) both;
 }
@@ -189,12 +195,42 @@
   }
 }
 
-.gd-map-event-screen > .gd-footer-chip {
-  margin: 8px 0;
+.gd-event-goblin-bar {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  height: 50px;
+  margin: 4px 14px 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--gd-bronze-soft);
+  background: #080a07f0;
+  box-shadow: inset 0 0 22px #000, 0 8px 18px #0008;
+  z-index: 3;
+}
+
+.gd-event-goblin-bar .gd-portrait {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.gd-event-goblin-bar .gd-name {
+  font-size: 15px !important;
+  line-height: 1.05 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gd-event-goblin-bar .gd-status,
+.gd-event-goblin-bar .gd-resource {
+  font-size: 10px !important;
+  line-height: 1.2 !important;
 }
 
 .gd-map-event-screen .gd-card {
-  margin-top: 8px;
+  margin-top: 0 !important;
+  min-height: 0 !important;
 }
 
 .gd-local-destinations,
@@ -216,11 +252,27 @@
     height: 320px;
     background-size: 260%;
   }
+
+  .gd-event-goblin-bar {
+    height: 46px;
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
 }
 
 @media (max-height: 700px) {
   .gd-focused-node-map {
     height: 265px;
     background-size: 275%;
+  }
+
+  .gd-event-goblin-bar {
+    height: 42px;
+    padding: 3px 8px;
+  }
+
+  .gd-event-goblin-bar .gd-portrait {
+    width: 34px !important;
+    height: 34px !important;
   }
 }
