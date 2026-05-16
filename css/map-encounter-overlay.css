@@ -101,44 +101,62 @@
   box-shadow: 0 0 0 2px #000, 0 0 0 5px rgba(245, 226, 164, .32), 0 0 18px rgba(245, 226, 164, .8);
 }
 
-.gd-hero-walker {
+.gd-map-player-token {
   position: absolute;
-  z-index: 5;
+  z-index: 6;
   left: var(--walk-from-x);
   top: var(--walk-from-y);
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   border: 2px solid #f5e2a4;
-  background: #050605dd;
+  background: #050605e8;
   color: #f5e2a4;
   font-size: 16px;
-  box-shadow: 0 0 0 2px #000, 0 0 18px rgba(245, 226, 164, .8);
+  box-shadow: 0 0 0 2px #000, 0 0 18px rgba(245, 226, 164, .82);
   transform: translate(-50%, -50%);
-  animation: gd-hero-walk 520ms ease-in-out forwards;
   pointer-events: none;
 }
 
-@keyframes gd-hero-walk {
+.gd-map-player-token span {
+  display: block;
+  filter: drop-shadow(0 1px 0 #000);
+}
+
+.gd-map-player-token.idle {
+  animation: gd-player-idle 1100ms ease-in-out infinite alternate;
+}
+
+.gd-map-player-token.walking {
+  animation: gd-player-walk 560ms ease-in-out forwards;
+}
+
+@keyframes gd-player-idle {
+  from { transform: translate(-50%, -50%) scale(.96); }
+  to { transform: translate(-50%, -54%) scale(1.02); }
+}
+
+@keyframes gd-player-walk {
   from {
     left: var(--walk-from-x);
     top: var(--walk-from-y);
-    transform: translate(-50%, -50%) scale(.92);
+    transform: translate(-50%, -50%) scale(.96);
   }
-  45% {
-    transform: translate(-50%, -58%) scale(1.04);
+  42% {
+    transform: translate(-50%, -62%) scale(1.07);
   }
   to {
     left: var(--walk-to-x);
     top: var(--walk-to-y);
-    transform: translate(-50%, -50%) scale(.92);
+    transform: translate(-50%, -50%) scale(.96);
   }
 }
 
 .gd-local-destinations,
-.gd-local-destination {
+.gd-local-destination,
+.gd-hero-walker {
   display: none !important;
 }
 
