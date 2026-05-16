@@ -4,6 +4,7 @@
   const MAX_DRAG = 132;
   const CONFIRM_MS = 280;
   let state = null;
+  let resultState = null;
   let pendingRender = false;
 
   const clampDrag = (value) => Math.max(-MAX_DRAG, Math.min(MAX_DRAG, value));
@@ -30,6 +31,12 @@
     card.style.setProperty("--swipe-progress", "0");
   };
 
+  const resetResult = (node) => {
+    node.classList.remove("gd-result-swiping", "gd-result-confirm-left", "gd-result-confirm-right");
+    node.style.setProperty("--result-swipe-x", "0px");
+    node.style.setProperty("--result-swipe-rotate", "0deg");
+  };
+
   const flushPendingRender = () => {
     if (!pendingRender) return;
     pendingRender = false;
@@ -49,6 +56,81 @@
     };
     card.addEventListener("transitionend", onTransitionEnd);
     window.setTimeout(finish, CONFIRM_MS + 80);
+  };
+
+  const acknowledgeAfterResultSlide = (node, side) => {
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      node.removeEventListener("transitionend", onTransitionEnd);
+      acknowledgeResult();
+    };
+    const onTransitionEnd = (event) => {
+      if (event.target === node && event.propertyName === "transform") finish();
+    };
+    node.classList.add(side === "left" ? "gd-result-confirm-left" : "gd-result-confirm-right");
+    node.addEventListener("transitionend", onTransitionEnd);
+    window.setTimeout(finish, CONFIRM_MS + 120);
+  };
+
+  const bindResultSwipe = () => {
+    const result = document.querySelector(".gd-action-result");
+    if (!result || result.dataset.resultSwipeBound) return;
+    result.dataset.resultSwipeBound = "true";
+    resetResult(result);
+
+    result.addEventListener("pointerdown", (event) => {
+      if (!game.awaitingResultAck || !game.resultReady) return;
+      event.preventDefault();
+      resultState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        dx: 0,
+        dy: 0,
+        node: result,
+      };
+      result.setPointerCapture?.(event.pointerId);
+      result.classList.add("gd-result-swiping");
+    }, { passive: false });
+
+    result.addEventListener("pointermove", (event) => {
+      if (!resultState || resultState.pointerId !== event.pointerId || resultState.node !== result) return;
+      resultState.dx = event.clientX - resultState.startX;
+      resultState.dy = event.clientY - resultState.startY;
+      if (Math.abs(resultState.dx) < 4 && Math.abs(resultState.dy) < 4) return;
+      event.preventDefault();
+      const drag = clampDrag(resultState.dx);
+      result.style.setProperty("--result-swipe-x", `${drag}px`);
+      result.style.setProperty("--result-swipe-rotate", `${drag * 0.035}deg`);
+    }, { passive: false });
+
+    const endResultSwipe = (event) => {
+      if (!resultState || resultState.pointerId !== event.pointerId || resultState.node !== result) return;
+      event.preventDefault();
+      const dx = resultState.dx;
+      const dy = resultState.dy;
+      const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.1;
+      const side = dx < 0 ? "left" : "right";
+      resultState = null;
+      result.releasePointerCapture?.(event.pointerId);
+      result.classList.remove("gd-result-swiping");
+
+      if (isHorizontal && Math.abs(dx) >= SWIPE_THRESHOLD && game.awaitingResultAck && game.resultReady) {
+        acknowledgeAfterResultSlide(result, side);
+      } else {
+        resetResult(result);
+      }
+    };
+
+    result.addEventListener("pointerup", endResultSwipe, { passive: false });
+    result.addEventListener("pointercancel", (event) => {
+      if (resultState?.pointerId === event.pointerId) {
+        resultState = null;
+        resetResult(result);
+      }
+    });
   };
 
   const bindSwipe = () => {
@@ -115,6 +197,20 @@
     });
   };
 
+  const installRewardChipCleanup = () => {
+    if (window.__regionCardAddedCleanup || typeof applyRewards !== "function") return;
+    window.__regionCardAddedCleanup = true;
+    const baseApplyRewards = applyRewards;
+    window.applyRewards = function applyRewards(rewards = []) {
+      const ghosts = baseApplyRewards(rewards);
+      ghosts?.forEach(ghost => {
+        if (ghost.kind === "card") ghost.text = String(ghost.text || "").replace(/\s+added$/i, "");
+      });
+      return ghosts;
+    };
+    applyRewards = window.applyRewards;
+  };
+
   const installLightweightTimer = () => {
     if (window.__lightweightTimerInstalled || typeof tick !== "function") return;
     window.__lightweightTimerInstalled = true;
@@ -160,11 +256,14 @@
     }
     const result = baseRender.apply(this, args);
     bindSwipe();
+    bindResultSwipe();
     window.updateTimerDom?.();
     return result;
   };
   render = window.render;
 
+  installRewardChipCleanup();
   bindSwipe();
+  bindResultSwipe();
   installLightweightTimer();
 })();
