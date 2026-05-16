@@ -39,8 +39,9 @@
 
 .gd-focused-node-map {
   height: 380px;
-  background-position: center;
-  background-size: 215%;
+  background-position: var(--map-focus-x, 50%) var(--map-focus-y, 50%);
+  background-size: 245%;
+  transition: background-position 220ms ease;
 }
 
 .gd-focused-node-map .gd-map-edge.preview {
@@ -155,14 +156,14 @@
 @media (max-height: 780px) {
   .gd-focused-node-map {
     height: 320px;
-    background-size: 230%;
+    background-size: 260%;
   }
 }
 
 @media (max-height: 700px) {
   .gd-focused-node-map {
     height: 265px;
-    background-size: 245%;
+    background-size: 275%;
   }
 
   .gd-map-encounter-overlay {
