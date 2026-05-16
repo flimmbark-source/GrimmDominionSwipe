@@ -1,6 +1,6 @@
-// Food system: each Food gives +5 to action rolls. At round end, lose 1 old Food if any.
+// Food system: each Food gives the registry-defined roll bonus. At round end, lose 1 old Food if any.
 (() => {
-  const FOOD_ROLL_BONUS = 5;
+  const foodBonusPerUnit = () => window.GD_MODIFIERS?.food?.rollBonusPerUnit || 5;
 
   game.hero.foodGainedThisRound ||= 0;
   game.hero.foodUpkeepTickId ||= 0;
@@ -8,7 +8,7 @@
   const baseGetRollBonus = typeof getRollBonus === "function" ? getRollBonus : () => 0;
 
   window.getFoodRollBonus = function getFoodRollBonus() {
-    return Math.max(0, game?.hero?.food || 0) * FOOD_ROLL_BONUS;
+    return Math.max(0, game?.hero?.food || 0) * foodBonusPerUnit();
   };
 
   window.getRollBonus = function getRollBonus(choiceData) {
@@ -59,12 +59,7 @@
 
   window.applyFoodUpkeep = applyFoodUpkeep;
 
-  const amount = (modifier) => {
-    if (typeof modifier.rollBonus === "number") return modifier.rollBonus;
-    if (typeof modifier.statBonus === "number") return modifier.statBonus * 5;
-    return 0;
-  };
-
+  const amount = (modifier) => typeof modifier.rollBonus === "number" ? modifier.rollBonus : 0;
   const signed = (value) => value > 0 ? `+${value}` : `${value}`;
 
   window.renderChoice = function renderChoice(side, choiceData) {
