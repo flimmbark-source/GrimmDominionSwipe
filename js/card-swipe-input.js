@@ -99,6 +99,43 @@
     });
   };
 
+  const installLightweightTimer = () => {
+    if (window.__lightweightTimerInstalled || typeof tick !== "function") return;
+    window.__lightweightTimerInstalled = true;
+
+    window.updateTimerDom = function updateTimerDom() {
+      document.querySelectorAll(".gd-timer").forEach(node => {
+        const label = node.parentElement?.querySelector(".gd-timer-label")?.textContent || "";
+        const isDark = node.classList.contains("red") || label.includes("Dark Lord");
+        node.textContent = `${isDark ? game.darkLordTimer : game.heroTimer}s`;
+      });
+    };
+
+    window.tick = function tick() {
+      game.darkLordTimer = Math.max(0, game.darkLordTimer - 1);
+
+      if (game.darkLordTimer === 0) {
+        if (typeof resultReadyTimeoutId !== "undefined" && resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+        resultReadyTimeoutId = null;
+        resolveDarkLordPlan();
+        if (typeof applyFoodUpkeep === "function") applyFoodUpkeep();
+        game.darkLordTimer = 60;
+        game.heroTimer = 40;
+        game.awaitingResultAck = false;
+        game.resultReady = false;
+        game.pendingNextCardId = null;
+        game.lastAction = null;
+        render();
+        return;
+      }
+
+      updateTimerDom();
+    };
+    tick = window.tick;
+    startTimers?.();
+    updateTimerDom();
+  };
+
   const baseRender = render;
   window.render = function(...args) {
     if (state?.card?.isConnected && game?.activeTab === "explore" && !game.awaitingResultAck && !game.lastAction) {
@@ -107,9 +144,11 @@
     }
     const result = baseRender.apply(this, args);
     bindSwipe();
+    window.updateTimerDom?.();
     return result;
   };
   render = window.render;
 
   bindSwipe();
+  installLightweightTimer();
 })();
