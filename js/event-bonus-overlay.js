@@ -22,7 +22,7 @@
     const total = totalBonusFor(choiceData);
     const totalClass = total > 0 ? "positive" : total < 0 ? "negative" : "neutral";
     if (!rows.length && total === 0) return "";
-    return `<div class="gd-art-bonus-list ${side}">${rows.map(row => `<div class="gd-art-bonus-chip"><b>${row.name}</b><span>${signed(row.bonus)}</span></div>`).join("")}<div class="gd-art-total-bonus ${totalClass}"><small>Total</small><b>${signed(total)}</b></div></div>`;
+    return `<div class="gd-art-bonus-list ${side}">${rows.map(row => `<div class="gd-art-bonus-chip"><b>${row.name}</b><span>${signed(row.bonus)}</span></div>`).join("")}<div class="gd-art-total-bonus ${totalClass}"><b>${signed(total)}</b></div></div>`;
   };
 
   const patchEventArt = () => {
