@@ -1,5 +1,15 @@
-// Add ?mapDebug=1 to show node IDs and log click coordinates.
+// Loads calibrated map coordinates, and adds ?mapDebug=1 tools when requested.
 (() => {
+  function loadCalibratedCoordinates() {
+    if (window.VILLAGE_IMAGE_COORDS || document.querySelector('script[data-village-image-coords]')) return;
+    const script = document.createElement("script");
+    script.src = "js/village-map-image-coordinates.js";
+    script.dataset.villageImageCoords = "true";
+    document.body.appendChild(script);
+  }
+
+  loadCalibratedCoordinates();
+
   const enabled = new URLSearchParams(window.location.search).get("mapDebug") === "1";
   if (!enabled) return;
 
