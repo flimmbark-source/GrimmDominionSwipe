@@ -76,7 +76,58 @@
     });
   });
 
+  function removeLink(a, b) {
+    nodes[a].connectsTo = nodes[a].connectsTo.filter(id => id !== b);
+    nodes[b].connectsTo = nodes[b].connectsTo.filter(id => id !== a);
+  }
+
+  function connected(a, b) {
+    return nodes[a]?.connectsTo?.includes(b);
+  }
+
+  function pointToSegmentDistance(c, a, b) {
+    const abx = b.x - a.x;
+    const aby = b.y - a.y;
+    const lenSq = abx * abx + aby * aby;
+    if (!lenSq) return { distance: Infinity, t: 0 };
+    const t = Math.max(0, Math.min(1, ((c.x - a.x) * abx + (c.y - a.y) * aby) / lenSq));
+    const px = a.x + abx * t;
+    const py = a.y + aby * t;
+    return { distance: Math.hypot(c.x - px, c.y - py), t };
+  }
+
+  function pruneSkipOverConnections() {
+    const ids = Object.keys(nodes);
+    const removed = [];
+    ids.forEach(aId => {
+      [...nodes[aId].connectsTo].forEach(bId => {
+        if (aId > bId || !nodes[bId]) return;
+        const a = nodes[aId];
+        const b = nodes[bId];
+        const edgeLength = Math.hypot(b.x - a.x, b.y - a.y);
+        if (edgeLength < 12) return;
+
+        const blocker = ids.find(cId => {
+          if (cId === aId || cId === bId) return false;
+          if (!connected(aId, cId) || !connected(cId, bId)) return false;
+          const c = nodes[cId];
+          const { distance, t } = pointToSegmentDistance(c, a, b);
+          return t > 0.18 && t < 0.82 && distance <= Math.max(2.6, edgeLength * 0.12);
+        });
+
+        if (blocker) {
+          removeLink(aId, bId);
+          removed.push(`${aId}→${bId} via ${blocker}`);
+        }
+      });
+    });
+    return removed;
+  }
+
+  const prunedSkipOvers = pruneSkipOverConnections();
+
   window.VILLAGE_CONNECTION_OVERRIDES = LINKS;
+  window.VILLAGE_PRUNED_SKIP_OVERS = prunedSkipOvers;
 
   ensureNodeState?.();
   render?.();
