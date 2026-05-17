@@ -85,6 +85,8 @@
   width: 13px;
   height: 13px;
   padding: 0;
+  display: grid;
+  place-items: center;
   border-radius: 999px;
   border: 1px solid #111;
   background: #8b8171;
@@ -94,12 +96,23 @@
   cursor: pointer;
 }
 
-.gd-map-node span {
-  display: block;
+.gd-map-node span,
+.gd-map-node-icon {
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), transparent 26%);
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.42), transparent 29%);
+}
+
+.gd-map-node-icon {
+  color: #fff4c8;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 1px #000, 0 0 3px #000;
+  transform: translateY(-.2px);
 }
 
 .gd-map-node:disabled {
@@ -145,6 +158,25 @@
 .gd-map-node.kennel { background: #9f5d3f; }
 .gd-map-node.forest { background: #5f8a55; }
 .gd-map-node.alley { background: #6f6b83; }
+
+.gd-focused-node-map .gd-map-node {
+  width: 21px;
+  height: 21px;
+}
+
+.gd-focused-node-map .gd-map-node-icon {
+  font-size: 12px;
+}
+
+.gd-focused-node-map .gd-map-node.reachable {
+  width: 24px;
+  height: 24px;
+}
+
+.gd-focused-node-map .gd-map-node.current {
+  width: 27px;
+  height: 27px;
+}
 
 .gd-node-current-readout {
   display: flex;
