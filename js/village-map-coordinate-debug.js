@@ -1,4 +1,4 @@
-// Loads calibrated map coordinates/connections/taxonomy/display/event tools, and adds ?mapDebug=1 tools when requested.
+// Loads calibrated map coordinates/location graph/taxonomy/display/event/icon tools, and adds ?mapDebug=1 tools when requested.
 (() => {
   function loadMapUtilityScript(src, dataKey, readyFlag) {
     if (window[readyFlag] || document.querySelector(`script[${dataKey}]`)) return;
@@ -9,12 +9,14 @@
   }
 
   loadMapUtilityScript("js/village-map-image-coordinates.js", "data-village-image-coords", "VILLAGE_IMAGE_COORDS");
-  loadMapUtilityScript("js/village-node-taxonomy.js", "data-village-node-taxonomy", "VILLAGE_NODE_TAXONOMY");
+  loadMapUtilityScript("js/village-location-inventory.js", "data-village-location-inventory", "VILLAGE_LOCATION_INVENTORY");
+  loadMapUtilityScript("js/village-location-graph-runtime.js", "data-village-location-graph-runtime", "VILLAGE_LOCATION_GRAPH_ACTIVE");
+  loadMapUtilityScript("js/village-node-icons.js", "data-village-node-icons", "VILLAGE_NODE_ICONS");
   loadMapUtilityScript("js/village-card-taxonomy.js", "data-village-card-taxonomy", "VILLAGE_CARD_TAXONOMY");
   loadMapUtilityScript("js/village-node-event-taxonomy-runtime.js", "data-village-node-event-taxonomy-runtime", "VILLAGE_NODE_EVENT_TAXONOMY_RUNTIME");
   loadMapUtilityScript("js/village-node-display-overrides.js", "data-village-node-display-overrides", "VILLAGE_NODE_DISPLAY_OVERRIDES");
-  loadMapUtilityScript("js/village-map-connection-overrides.js", "data-village-connection-overrides", "VILLAGE_CONNECTION_OVERRIDES");
   loadMapUtilityScript("js/village-node-display-runtime.js", "data-village-node-display-runtime", "VILLAGE_NODE_DISPLAY_RUNTIME");
+  loadMapUtilityScript("js/village-current-node-anchor.js", "data-village-current-node-anchor", "VILLAGE_CURRENT_NODE_ANCHOR");
 
   const enabled = new URLSearchParams(window.location.search).get("mapDebug") === "1";
   if (!enabled) return;
