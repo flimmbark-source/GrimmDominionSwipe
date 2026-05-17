@@ -240,8 +240,11 @@
   flex-direction: column !important;
 }
 
+.gd-map-event-screen .gd-card-text,
 .gd-map-event-screen .gd-event-flavor-text {
   display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: initial !important;
   min-height: 42px !important;
   max-height: none !important;
   margin: 6px 0 10px !important;
@@ -250,6 +253,7 @@
   overflow: visible !important;
   color: var(--gd-muted) !important;
   line-height: 1.25 !important;
+  font-size: 13px !important;
 }
 
 .gd-local-destinations,
@@ -279,7 +283,9 @@
     margin-bottom: 3px;
   }
 
+  .gd-map-event-screen .gd-card-text,
   .gd-map-event-screen .gd-event-flavor-text {
+    display: block !important;
     min-height: 34px !important;
     margin: 4px 0 8px !important;
   }
@@ -301,7 +307,9 @@
     height: 34px !important;
   }
 
+  .gd-map-event-screen .gd-card-text,
   .gd-map-event-screen .gd-event-flavor-text {
+    display: block !important;
     min-height: 28px !important;
     font-size: 12px !important;
   }
