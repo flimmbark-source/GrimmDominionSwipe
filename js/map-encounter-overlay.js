@@ -3,6 +3,7 @@
   const LOCAL_DEPTH = 2;
   const LOCAL_ZOOM = 2.35;
   const WALK_MS = 560;
+  const EVENT_ENTER_MS = 240;
   const EVENT_EXIT_MS = 220;
   const NO_EVENT_CARD = "quiet_village_path";
 
@@ -64,10 +65,11 @@
     game.result = `Encounter at ${nodeDef(id)?.label || "Node"}: ${cards[cardId]?.title || "Event"}.`;
     game.log.unshift(game.result);
     render();
-    requestAnimationFrame(() => {
-      game.eventTransition = "active";
-      render();
-    });
+    window.setTimeout(() => {
+      if (game.activeEncounter?.nodeId === id && game.currentCardId === cardId && game.eventTransition === "enter") {
+        game.eventTransition = "active";
+      }
+    }, EVENT_ENTER_MS);
     return true;
   }
 
@@ -164,10 +166,6 @@
     return `<div class="gd-map-player-token ${game.pendingNodeMove ? "walking camera-centered" : "idle"}" style="left:50%;top:50%"><span>♟</span></div>`;
   }
 
-  function renderEventHeroBar() {
-    return `<section class="gd-event-goblin-bar"><img class="gd-portrait" src="${ART.goblinSmall}"><div><div class="gd-name">${game.hero.name} <span class="gd-inline-hp">♥ ${game.partyHealth}/10</span></div><div class="gd-status">◉ ${game.hero.status}</div></div><div class="gd-resource">Gold ${game.hero.resourceValue}<br><b>Food ${game.hero.food}</b></div></section>`;
-  }
-
   function renderMapScreen() {
     if (!hasMap()) return renderExplore();
     ensureNodeState?.();
@@ -201,8 +199,8 @@
     return `<div class="gd-main-scroll gd-map-event-screen ${game.eventTransition || "active"}">
       <section class="gd-top single-right"><div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-region-header"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-region-title">${node?.label || region.name}</div><div class="gd-subtitle">${region.subtitle}</div></div></div><div class="gd-pill">◉ ${region.state}</div></section>
-      <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text gd-event-flavor-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
-      ${renderEventHeroBar()}
+      <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
+      ${renderHeroFooter()}
       <div class="gd-result-toast">${game.result}</div>
     </div>`;
   }
@@ -291,14 +289,22 @@
   const baseAck = acknowledgeResult;
   window.acknowledgeResult = function acknowledgeResult() {
     if (game.activeEncounter && game.resultReady) {
+      const nodeId = game.activeEncounter.nodeId || currentNodeId();
       game.eventTransition = "exit";
       render();
       setTimeout(() => {
-        baseAck();
+        if (resultReadyTimeoutId) clearTimeout(resultReadyTimeoutId);
+        resultReadyTimeoutId = null;
+        game.pendingNextCardId = null;
+        game.awaitingResultAck = false;
+        game.resultReady = false;
+        game.lastAction = null;
         game.activeEncounter = null;
         game.currentCardId = null;
         game.eventTransition = null;
         game.activeTab = "explore";
+        game.result = `Returned to ${nodeDef(nodeId)?.label || "the map"}.`;
+        syncPartyHeroSummary();
         render();
       }, EVENT_EXIT_MS);
       return;
