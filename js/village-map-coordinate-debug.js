@@ -1,4 +1,4 @@
-// Loads calibrated map coordinates/connections/taxonomy/display/event tools, and adds ?mapDebug=1 tools when requested.
+// Loads calibrated map coordinates/connections/taxonomy/display/event/icon tools, and adds ?mapDebug=1 tools when requested.
 (() => {
   function loadMapUtilityScript(src, dataKey, readyFlag) {
     if (window[readyFlag] || document.querySelector(`script[${dataKey}]`)) return;
@@ -10,6 +10,7 @@
 
   loadMapUtilityScript("js/village-map-image-coordinates.js", "data-village-image-coords", "VILLAGE_IMAGE_COORDS");
   loadMapUtilityScript("js/village-node-taxonomy.js", "data-village-node-taxonomy", "VILLAGE_NODE_TAXONOMY");
+  loadMapUtilityScript("js/village-node-icons.js", "data-village-node-icons", "VILLAGE_NODE_ICONS");
   loadMapUtilityScript("js/village-card-taxonomy.js", "data-village-card-taxonomy", "VILLAGE_CARD_TAXONOMY");
   loadMapUtilityScript("js/village-node-event-taxonomy-runtime.js", "data-village-node-event-taxonomy-runtime", "VILLAGE_NODE_EVENT_TAXONOMY_RUNTIME");
   loadMapUtilityScript("js/village-node-display-overrides.js", "data-village-node-display-overrides", "VILLAGE_NODE_DISPLAY_OVERRIDES");
