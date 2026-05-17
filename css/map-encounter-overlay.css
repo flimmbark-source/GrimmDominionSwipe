@@ -5,8 +5,8 @@
 }
 
 .gd-map-event-screen {
-  display: grid !important;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto !important;
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden !important;
 }
 
@@ -201,7 +201,8 @@
   align-items: center;
   gap: 8px;
   height: 50px;
-  margin: 4px 14px 6px;
+  flex: 0 0 auto;
+  margin: 5px 14px 4px;
   padding: 5px 9px;
   border: 1px solid var(--gd-bronze-soft);
   background: #080a07f0;
@@ -229,8 +230,26 @@
 }
 
 .gd-map-event-screen .gd-card {
-  margin-top: 0 !important;
+  flex: 1 1 auto !important;
   min-height: 0 !important;
+  margin-top: 0 !important;
+}
+
+.gd-map-event-screen .gd-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.gd-map-event-screen .gd-event-flavor-text {
+  display: block !important;
+  min-height: 42px !important;
+  max-height: none !important;
+  margin: 6px 0 10px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  color: var(--gd-muted) !important;
+  line-height: 1.25 !important;
 }
 
 .gd-local-destinations,
@@ -245,6 +264,7 @@
 .gd-map-first-screen .gd-result-toast,
 .gd-map-event-screen .gd-result-toast {
   min-height: 32px;
+  flex: 0 0 auto;
 }
 
 @media (max-height: 780px) {
@@ -255,8 +275,13 @@
 
   .gd-event-goblin-bar {
     height: 46px;
-    margin-top: 2px;
-    margin-bottom: 4px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+
+  .gd-map-event-screen .gd-event-flavor-text {
+    min-height: 34px !important;
+    margin: 4px 0 8px !important;
   }
 }
 
@@ -274,5 +299,10 @@
   .gd-event-goblin-bar .gd-portrait {
     width: 34px !important;
     height: 34px !important;
+  }
+
+  .gd-map-event-screen .gd-event-flavor-text {
+    min-height: 28px !important;
+    font-size: 12px !important;
   }
 }
