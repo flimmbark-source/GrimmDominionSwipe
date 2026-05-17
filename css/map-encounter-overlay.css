@@ -1,13 +1,6 @@
 .gd-map-first-screen,
 .gd-map-event-screen {
   position: relative;
-  animation: gd-screen-in 220ms ease-out both;
-}
-
-.gd-map-event-screen {
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
 }
 
 .gd-map-event-screen.enter {
@@ -18,19 +11,14 @@
   animation: gd-event-out 220ms ease-in both;
 }
 
-@keyframes gd-screen-in {
-  from { opacity: 0; transform: translateY(10px) scale(.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
 @keyframes gd-event-in {
-  from { opacity: 0; transform: translateY(22px) scale(.97); filter: brightness(.8); }
+  from { opacity: 0; transform: translateY(18px) scale(.985); filter: brightness(.86); }
   to { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); }
 }
 
 @keyframes gd-event-out {
   from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(22px) scale(.97); }
+  to { opacity: 0; transform: translateY(18px) scale(.985); }
 }
 
 .gd-focused-map-card {
@@ -195,56 +183,11 @@
   }
 }
 
-.gd-event-goblin-bar {
-  display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  height: 50px;
-  flex: 0 0 auto;
-  margin: 5px 14px 4px;
-  padding: 5px 9px;
-  border: 1px solid var(--gd-bronze-soft);
-  background: #080a07f0;
-  box-shadow: inset 0 0 22px #000, 0 8px 18px #0008;
-  z-index: 3;
-}
-
-.gd-event-goblin-bar .gd-portrait {
-  width: 40px !important;
-  height: 40px !important;
-}
-
-.gd-event-goblin-bar .gd-name {
-  font-size: 15px !important;
-  line-height: 1.05 !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gd-event-goblin-bar .gd-status,
-.gd-event-goblin-bar .gd-resource {
-  font-size: 10px !important;
-  line-height: 1.2 !important;
-}
-
-.gd-map-event-screen .gd-card {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  margin-top: 0 !important;
-}
-
-.gd-map-event-screen .gd-card-body {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.gd-map-event-screen .gd-card-text,
-.gd-map-event-screen .gd-event-flavor-text {
+.gd-map-event-screen .gd-card-text {
   display: block !important;
   -webkit-box-orient: initial !important;
-  min-height: 42px !important;
+  -webkit-line-clamp: unset !important;
+  min-height: 38px !important;
   max-height: none !important;
   margin: 6px 0 10px !important;
   opacity: 1 !important;
@@ -255,12 +198,20 @@
   font-size: 13px !important;
 }
 
+.gd-map-event-screen .gd-footer-chip,
+.gd-map-event-screen .gd-footer-chip.slim {
+  margin-top: 5px !important;
+  margin-bottom: 4px !important;
+  flex: 0 0 auto;
+}
+
 .gd-local-destinations,
 .gd-local-destination,
 .gd-hero-walker,
 .gd-map-encounter-overlay,
 .gd-encounter-stack,
-.gd-event-hero-bar {
+.gd-event-hero-bar,
+.gd-event-goblin-bar {
   display: none !important;
 }
 
@@ -276,14 +227,7 @@
     background-size: 260%;
   }
 
-  .gd-event-goblin-bar {
-    height: 46px;
-    margin-top: 3px;
-    margin-bottom: 3px;
-  }
-
-  .gd-map-event-screen .gd-card-text,
-  .gd-map-event-screen .gd-event-flavor-text {
+  .gd-map-event-screen .gd-card-text {
     display: block !important;
     min-height: 34px !important;
     margin: 4px 0 8px !important;
@@ -296,18 +240,7 @@
     background-size: 275%;
   }
 
-  .gd-event-goblin-bar {
-    height: 42px;
-    padding: 3px 8px;
-  }
-
-  .gd-event-goblin-bar .gd-portrait {
-    width: 34px !important;
-    height: 34px !important;
-  }
-
-  .gd-map-event-screen .gd-card-text,
-  .gd-map-event-screen .gd-event-flavor-text {
+  .gd-map-event-screen .gd-card-text {
     display: block !important;
     min-height: 28px !important;
     font-size: 12px !important;
