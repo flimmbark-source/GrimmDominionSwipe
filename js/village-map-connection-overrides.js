@@ -8,7 +8,7 @@
     forest_edge_01: ["forest_path_01", "stream_bank_01", "hedge_gap_01"],
     forest_path_01: ["forest_edge_01", "overgrown_trail_01", "old_road_west_01", "hedge_gap_01"],
     stream_bank_01: ["forest_edge_01", "root_tunnel_01"],
-    hedge_gap_01: ["forest_edge_01", "forest_path_01", "old_road_west_01", "sleeping_cottage_01"],
+    hedge_gap_01: ["forest_edge_01", "forest_path_01", "old_road_west_01"],
 
     // Western road spine
     old_road_west_01: ["forest_path_01", "hedge_gap_01", "old_road_crossing_01", "sleeping_cottage_01"],
@@ -17,7 +17,7 @@
     muddy_turn_01: ["well_yard_01", "root_tunnel_01", "drain_path_01"],
 
     // Western cottage cluster
-    sleeping_cottage_01: ["hedge_gap_01", "old_road_west_01", "cottage_row_west_01", "cottage_yard_01"],
+    sleeping_cottage_01: ["old_road_west_01", "cottage_row_west_01", "cottage_yard_01"],
     cottage_yard_01: ["overgrown_trail_01", "sleeping_cottage_01", "woodpile_01", "back_window_01"],
     woodpile_01: ["overgrown_trail_01", "cottage_yard_01", "cottage_back_path_01"],
     back_window_01: ["cottage_yard_01", "cottage_back_path_01"],
