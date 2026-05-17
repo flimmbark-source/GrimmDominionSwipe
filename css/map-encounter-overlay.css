@@ -183,19 +183,33 @@
   }
 }
 
-.gd-map-event-screen .gd-card-text {
+.gd-map-event-screen .gd-card {
+  grid-template-rows: minmax(150px, 34dvh) auto !important;
+}
+
+.gd-map-event-screen .gd-card-body {
+  padding-top: 16px !important;
+}
+
+.gd-map-event-screen .gd-card-title {
+  margin-bottom: 7px !important;
+}
+
+.gd-map-event-screen .gd-card-text,
+.gd-map-event-screen .gd-event-card-text {
   display: block !important;
   -webkit-box-orient: initial !important;
   -webkit-line-clamp: unset !important;
-  min-height: 38px !important;
-  max-height: none !important;
-  margin: 6px 0 10px !important;
+  min-height: 44px !important;
+  max-height: 76px !important;
+  margin: 4px 0 10px !important;
   opacity: 1 !important;
   visibility: visible !important;
-  overflow: visible !important;
-  color: var(--gd-muted) !important;
+  overflow: hidden !important;
+  color: #c7bba2 !important;
   line-height: 1.25 !important;
   font-size: 13px !important;
+  font-style: italic !important;
 }
 
 .gd-map-event-screen .gd-footer-chip,
@@ -227,10 +241,16 @@
     background-size: 260%;
   }
 
-  .gd-map-event-screen .gd-card-text {
+  .gd-map-event-screen .gd-card {
+    grid-template-rows: minmax(132px, 31dvh) auto !important;
+  }
+
+  .gd-map-event-screen .gd-card-text,
+  .gd-map-event-screen .gd-event-card-text {
     display: block !important;
-    min-height: 34px !important;
-    margin: 4px 0 8px !important;
+    min-height: 40px !important;
+    max-height: 66px !important;
+    margin: 3px 0 8px !important;
   }
 }
 
@@ -240,9 +260,20 @@
     background-size: 275%;
   }
 
-  .gd-map-event-screen .gd-card-text {
+  .gd-map-event-screen .gd-card {
+    grid-template-rows: minmax(108px, 27dvh) auto !important;
+  }
+
+  .gd-map-event-screen .gd-card-body {
+    padding-top: 14px !important;
+  }
+
+  .gd-map-event-screen .gd-card-text,
+  .gd-map-event-screen .gd-event-card-text {
     display: block !important;
-    min-height: 28px !important;
+    min-height: 36px !important;
+    max-height: 54px !important;
     font-size: 12px !important;
+    line-height: 1.2 !important;
   }
 }
