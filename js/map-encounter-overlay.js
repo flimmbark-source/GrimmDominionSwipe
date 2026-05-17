@@ -1,7 +1,8 @@
 // Map-first Explore flow: Explore is the map; encounters use the original card screen.
 (() => {
   const LOCAL_DEPTH = 2;
-  const LOCAL_ZOOM = 2.35;
+  const LOCAL_ZOOM = 2.45;
+  const MAP_ZOOM_PERCENT = `${LOCAL_ZOOM * 100}%`;
   const WALK_MS = 560;
   const EVENT_ENTER_MS = 240;
   const EVENT_EXIT_MS = 220;
@@ -112,6 +113,12 @@
     return { x: 50 + (def.x - camera.x) * LOCAL_ZOOM, y: 50 + (def.y - camera.y) * LOCAL_ZOOM };
   }
 
+  function syncMapBackgroundZoom(root = document) {
+    root.querySelectorAll?.(".gd-focused-node-map").forEach(mapEl => {
+      mapEl.style.setProperty("background-size", MAP_ZOOM_PERCENT, "important");
+    });
+  }
+
   function inViewport(point) { return point.x >= -8 && point.x <= 108 && point.y >= -8 && point.y <= 108; }
   function edgeId(a, b) { return [a, b].sort().join("--"); }
 
@@ -189,14 +196,14 @@
     const center = nodeDef(centerId);
     const visible = localSet(centerId);
     const tags = nodeTagHtml(center);
-    const bgX = clamp(camera.x, 12, 88);
-    const bgY = clamp(camera.y, 12, 88);
+    const bgX = camera.x;
+    const bgY = camera.y;
     const hint = move ? `Moving to ${nodeDef(move.to)?.label}.` : (game.result || "Tap a connected node on the map to move.");
     return `<div class="gd-main-scroll gd-map-first-screen map-mode ${game.eventTransition || "active"}">
       <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${move ? nodeDef(move.to)?.label : center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${move ? `To ${nodeDef(move.to)?.label}` : center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
-        <div class="gd-focused-node-map gd-node-map is-camera-following" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}</div>
+        <div class="gd-focused-node-map gd-node-map is-camera-following" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%;background-size:${MAP_ZOOM_PERCENT}">${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}</div>
         <div class="gd-node-current-readout">${nodeReadoutHtml(centerId)}</div>
       </section>
       <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}
@@ -211,8 +218,8 @@
     const center = nodeDef(centerId);
     const camera = cameraPoint();
     const visible = localSet(centerId);
-    const bgX = clamp(camera.x, 12, 88);
-    const bgY = clamp(camera.y, 12, 88);
+    const bgX = camera.x;
+    const bgY = camera.y;
 
     screen.querySelector(".gd-top .gd-subtitle")?.replaceChildren(document.createTextNode(center.label));
     screen.querySelector(".gd-focused-map-head small")?.replaceChildren(document.createTextNode(center.label));
@@ -226,6 +233,7 @@
     mapEl.classList.remove("is-moving");
     mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
     mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
+    mapEl.style.setProperty("background-size", MAP_ZOOM_PERCENT, "important");
     mapEl.innerHTML = `${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}`;
     window.updateTimerDom?.();
     return true;
@@ -307,8 +315,12 @@
 
   function afterExploreRender() {
     restoreVisibleCardFlavor();
+    syncMapBackgroundZoom();
     fillEventCardFooterGap();
-    requestAnimationFrame(fillEventCardFooterGap);
+    requestAnimationFrame(() => {
+      syncMapBackgroundZoom();
+      fillEventCardFooterGap();
+    });
   }
 
   window.renderMapFirstExplore = function renderMapFirstExplore() {
@@ -325,10 +337,11 @@
     const camera = cameraPoint();
     const centerId = move.from;
     const visible = localSet(centerId);
-    const bgX = clamp(camera.x, 12, 88);
-    const bgY = clamp(camera.y, 12, 88);
+    const bgX = camera.x;
+    const bgY = camera.y;
     mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
     mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
+    mapEl.style.setProperty("background-size", MAP_ZOOM_PERCENT, "important");
 
     edgeModels(centerId, visible, camera).forEach(edge => {
       const line = mapEl.querySelector(`[data-edge-id="${edge.id}"]`);
