@@ -1,0 +1,22 @@
+html.map-debug .gd-map-debug-label {
+  position: absolute;
+  z-index: 20;
+  transform: translate(-50%, 10px);
+  max-width: 92px;
+  padding: 2px 3px;
+  border: 1px solid #f4d777;
+  background: #050605e8;
+  color: #f4d777;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #000;
+}
+
+html.map-debug .gd-map-node {
+  width: 16px;
+  height: 16px;
+  z-index: 21;
+}

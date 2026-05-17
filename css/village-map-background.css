@@ -1,0 +1,34 @@
+.gd-node-map {
+  background-image: none !important;
+  background-position: center !important;
+  background-size: auto !important;
+}
+
+.gd-map-art-layer {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  max-width: none;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.gd-map-shade-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(#05060533, #050605aa);
+}
+
+.gd-map-node.water { background: #4e7f96; }
+.gd-map-node.yard { background: #78735b; }
+.gd-map-node.shed { background: #8b6b4d; }
+
+.gd-node-destination.water,
+.gd-local-destination.water { border-color: #31566a; }
+.gd-node-destination.yard,
+.gd-local-destination.yard { border-color: #514a31; }
+.gd-node-destination.shed,
+.gd-local-destination.shed { border-color: #5d4129; }
