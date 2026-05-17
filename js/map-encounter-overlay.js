@@ -215,6 +215,26 @@
     </div>`;
   }
 
+  function restoreVisibleCardFlavor() {
+    if (game.activeTab !== "explore") return;
+    const card = cards?.[game.currentCardId];
+    const text = card ? cardFlavorText(card) : "";
+    if (!text) return;
+    const body = document.querySelector(".gd-card .gd-card-body");
+    const title = body?.querySelector(".gd-card-title");
+    if (!body || !title) return;
+
+    let textNode = body.querySelector(".gd-card-text");
+    if (!textNode) {
+      textNode = document.createElement("div");
+      textNode.className = "gd-card-text gd-event-card-text gd-forced-event-text";
+      title.insertAdjacentElement("afterend", textNode);
+    }
+
+    textNode.classList.add("gd-event-card-text", "gd-forced-event-text");
+    if (textNode.textContent.trim() !== text) textNode.textContent = text;
+  }
+
   window.renderMapFirstExplore = function renderMapFirstExplore() {
     return game.activeEncounter ? renderEventScreen() : renderMapScreen();
   };
@@ -332,6 +352,14 @@
     baseAck();
   };
   acknowledgeResult = window.acknowledgeResult;
+
+  const baseRender = render;
+  window.render = function render(...args) {
+    const result = baseRender.apply(this, args);
+    restoreVisibleCardFlavor();
+    return result;
+  };
+  render = window.render;
 
   game.activeEncounter ||= null;
   game.pendingNodeMove ||= null;
