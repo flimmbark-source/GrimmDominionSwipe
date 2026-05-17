@@ -310,6 +310,16 @@
   margin-bottom: 0 !important;
 }
 
+/* Event-only: close the remaining visual gap between the card and Goblin footer. */
+.gd-map-event-screen .gd-card {
+  margin-bottom: -4px !important;
+}
+
+.gd-map-event-screen .gd-footer-chip,
+.gd-map-event-screen .gd-footer-chip.slim {
+  margin-top: 0 !important;
+}
+
 @media (max-height: 780px) {
   .gd-focused-node-map {
     height: 320px;
