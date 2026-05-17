@@ -243,7 +243,6 @@
 .gd-map-event-screen .gd-card-text,
 .gd-map-event-screen .gd-event-flavor-text {
   display: block !important;
-  -webkit-line-clamp: unset !important;
   -webkit-box-orient: initial !important;
   min-height: 42px !important;
   max-height: none !important;
