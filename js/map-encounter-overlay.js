@@ -29,21 +29,17 @@
 
   function fallbackCardForNode(def) {
     if (!def) return null;
-    const tags = new Set([def.locationType, def.kind, ...(def.tags || [])]);
+    const tags = new Set([def.kind, ...(def.tags || [])]);
     const ordered = [];
-    if (tags.has("sleeping-cottage") || tags.has("back-window") || tags.has("cottage-row")) ordered.push("village_house_window", "inside_sleeping_house", "locked_cottage");
-    if (tags.has("dark-cottage")) ordered.push("apothecary_drawer", "locked_cottage", "withered_supplies");
-    if (tags.has("bakery") || tags.has("baker-lane") || tags.has("flour-shed")) ordered.push("baker_backdoor", "hidden_pantry", "withered_supplies");
-    if (tags.has("market-square") || tags.has("market-stalls") || tags.has("market-gate")) ordered.push("market_stall", "false_cache", "watch_patrol");
-    if (tags.has("stone-well") || tags.has("well-yard") || tags.has("well-lane")) ordered.push("well_bucket", "plague_well", "well_tunnel");
-    if (tags.has("sewer-grate") || tags.has("drain-path") || tags.has("collapsed-drain") || tags.has("root-tunnel")) ordered.push("sewer_grate", "drain_crawl", "secret_tunnel");
-    if (tags.has("chapel-steps") || tags.has("chapel-path")) ordered.push("chapel_backroom", "grave_bell", "secret_route");
-    if (tags.has("shrine-cart") || tags.has("shrine-corner") || tags.has("wayside-shrine")) ordered.push("shrine_vendor", "whispering_idol", "grave_bell");
-    if (tags.has("guard-post") || tags.has("guard-road") || tags.has("watch-fire")) ordered.push("guard_post", "watch_patrol", "sealed_exit");
-    if (tags.has("kennel-yard") || tags.has("kennel-fence")) ordered.push("kennel_yard", "hound_pack");
-    if (tags.has("forest-edge") || tags.has("forest-path") || tags.has("overgrown-trail") || tags.has("wood-trail")) ordered.push("secret_route", "scout_sniffs_path", "bloodroot");
-    if (!ordered.length && (tags.has("house") || tags.has("yard"))) ordered.push("village_house_window", "locked_cottage");
-    if (!ordered.length && (tags.has("forest") || tags.has("path"))) ordered.push("secret_route", "scout_sniffs_path", "bloodroot");
+    if (tags.has("house")) ordered.push("village_house_window", "baker_backdoor", "apothecary_drawer");
+    if (tags.has("food") || tags.has("shed")) ordered.push("hidden_pantry", "baker_backdoor");
+    if (tags.has("market")) ordered.push("market_stall", "shrine_vendor", "false_cache");
+    if (tags.has("well") || tags.has("water")) ordered.push("well_bucket", "plague_well", "sewer_grate");
+    if (tags.has("sewer") || tags.has("tunnel")) ordered.push("sewer_grate", "drain_crawl", "secret_tunnel");
+    if (tags.has("shrine") || tags.has("spirit") || tags.has("magic")) ordered.push("shrine_vendor", "grave_bell", "whispering_idol");
+    if (tags.has("guard") || tags.has("patrol")) ordered.push("guard_post", "watch_patrol", "scout_sniffs_path");
+    if (tags.has("kennel") || tags.has("hounds")) ordered.push("kennel_yard", "hound_pack");
+    if (tags.has("forest") || tags.has("route") || tags.has("path")) ordered.push("secret_route", "scout_sniffs_path", "bloodroot");
     return pick(validCards(ordered));
   }
 
@@ -113,15 +109,9 @@
     return { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased, centerId: move.from, moving: true };
   }
 
-  function displayCoord(id) {
-    const def = nodeDef(id);
-    const offset = def?.displayOffset || { x: 0, y: 0 };
-    return { x: def.x + (offset.x || 0), y: def.y + (offset.y || 0) };
-  }
-
   function projectNode(id, camera) {
-    const point = displayCoord(id);
-    return { x: 50 + (point.x - camera.x) * LOCAL_ZOOM, y: 50 + (point.y - camera.y) * LOCAL_ZOOM };
+    const def = nodeDef(id);
+    return { x: 50 + (def.x - camera.x) * LOCAL_ZOOM, y: 50 + (def.y - camera.y) * LOCAL_ZOOM };
   }
 
   function mapArtStyle(camera) {
@@ -384,7 +374,7 @@
     game.hero.currentNodeId = id;
     nodeState(id).visited = true;
     nodeState(id).visible = true;
-    connected(id).forEach(next => nodeState(next).visible = true;
+    connected(id).forEach(next => nodeState(next).visible = true);
     game.heroTimer = Math.max(0, game.heroTimer - moveCost(id));
     game.pendingNodeMove = null;
     document.querySelector(".gd-focused-node-map")?.classList.remove("is-moving");
