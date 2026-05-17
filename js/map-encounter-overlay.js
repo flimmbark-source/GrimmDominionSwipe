@@ -271,6 +271,46 @@
     if (textNode.textContent.trim() !== text) textNode.textContent = text;
   }
 
+  function fillEventCardFooterGap() {
+    if (game.activeTab !== "explore" || !game.activeEncounter) return;
+    const screen = document.querySelector(".gd-map-event-screen");
+    const card = screen?.querySelector(".gd-card");
+    const body = card?.querySelector(".gd-card-body");
+    const choiceRow = card?.querySelector(".gd-choice-row");
+    const footer = screen?.querySelector(".gd-footer-chip");
+    if (!screen || !card || !footer) return;
+
+    card.style.removeProperty("height");
+    card.style.removeProperty("min-height");
+    card.style.removeProperty("margin-bottom");
+
+    const cardRect = card.getBoundingClientRect();
+    const footerRect = footer.getBoundingClientRect();
+    const gap = Math.floor(footerRect.top - cardRect.bottom);
+    if (gap <= 2) return;
+
+    const nextHeight = Math.ceil(cardRect.height + gap);
+    card.style.setProperty("height", `${nextHeight}px`, "important");
+    card.style.setProperty("min-height", `${nextHeight}px`, "important");
+    card.style.setProperty("margin-bottom", `${-gap}px`, "important");
+    card.style.setProperty("position", "relative", "important");
+    card.style.setProperty("z-index", "1", "important");
+    footer.style.setProperty("position", "relative", "important");
+    footer.style.setProperty("z-index", "2", "important");
+
+    if (body) {
+      body.style.setProperty("display", "flex", "important");
+      body.style.setProperty("flex-direction", "column", "important");
+    }
+    if (choiceRow) choiceRow.style.setProperty("margin-top", "auto", "important");
+  }
+
+  function afterExploreRender() {
+    restoreVisibleCardFlavor();
+    fillEventCardFooterGap();
+    requestAnimationFrame(fillEventCardFooterGap);
+  }
+
   window.renderMapFirstExplore = function renderMapFirstExplore() {
     return game.activeEncounter ? renderEventScreen() : renderMapScreen();
   };
@@ -392,7 +432,7 @@
   const baseRender = render;
   window.render = function render(...args) {
     const result = baseRender.apply(this, args);
-    restoreVisibleCardFlavor();
+    afterExploreRender();
     return result;
   };
   render = window.render;
