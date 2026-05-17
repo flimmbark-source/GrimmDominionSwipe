@@ -310,6 +310,12 @@
   margin-bottom: 0 !important;
 }
 
+/* Explore mode: show only the current node, immediately reachable nodes, and the lines to them. */
+.gd-map-first-screen .gd-focused-node-map .gd-map-node.preview,
+.gd-map-first-screen .gd-map-line-layer line.preview {
+  display: none !important;
+}
+
 /* Event-only: extend the card border into the remaining blank band above the Goblin footer. */
 .gd-map-event-screen .gd-card {
   --gd-event-card-footer-gap: 54px;
