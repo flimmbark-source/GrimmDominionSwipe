@@ -310,13 +310,27 @@
   margin-bottom: 0 !important;
 }
 
-/* Event-only: close the remaining visual gap between the card and Goblin footer. */
+/* Event-only: extend the card border into the remaining blank band above the Goblin footer. */
 .gd-map-event-screen .gd-card {
-  margin-bottom: -4px !important;
+  --gd-event-card-footer-gap: 54px;
+  height: calc(100% + var(--gd-event-card-footer-gap)) !important;
+  min-height: calc(100% + var(--gd-event-card-footer-gap)) !important;
+  margin-bottom: calc(-1 * var(--gd-event-card-footer-gap)) !important;
+}
+
+.gd-map-event-screen .gd-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.gd-map-event-screen .gd-choice-row {
+  margin-top: auto !important;
 }
 
 .gd-map-event-screen .gd-footer-chip,
 .gd-map-event-screen .gd-footer-chip.slim {
+  position: relative;
+  z-index: 9;
   margin-top: 0 !important;
 }
 
@@ -355,6 +369,7 @@
 
   .gd-map-event-screen .gd-card {
     grid-template-rows: minmax(108px, 27dvh) minmax(0, 1fr) !important;
+    --gd-event-card-footer-gap: 48px;
   }
 
   .gd-map-event-screen .gd-card .gd-card-timer {
