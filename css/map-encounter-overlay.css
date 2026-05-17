@@ -1,7 +1,6 @@
 .gd-map-first-screen,
 .gd-map-event-screen {
   position: relative;
-  animation: gd-screen-in 220ms ease-out both;
 }
 
 .gd-map-event-screen {
@@ -16,11 +15,6 @@
 
 .gd-map-event-screen.exit {
   animation: gd-event-out 220ms ease-in both;
-}
-
-@keyframes gd-screen-in {
-  from { opacity: 0; transform: translateY(10px) scale(.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes gd-event-in {
