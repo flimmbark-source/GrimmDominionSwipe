@@ -109,9 +109,15 @@
     return { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased, centerId: move.from, moving: true };
   }
 
-  function projectNode(id, camera) {
+  function nodeDisplayPoint(id) {
     const def = nodeDef(id);
-    return { x: 50 + (def.x - camera.x) * LOCAL_ZOOM, y: 50 + (def.y - camera.y) * LOCAL_ZOOM };
+    const offset = def?.displayOffset || { x: 0, y: 0 };
+    return { x: def.x + (Number(offset.x) || 0), y: def.y + (Number(offset.y) || 0) };
+  }
+
+  function projectNode(id, camera) {
+    const point = nodeDisplayPoint(id);
+    return { x: 50 + (point.x - camera.x) * LOCAL_ZOOM, y: 50 + (point.y - camera.y) * LOCAL_ZOOM };
   }
 
   function mapArtStyle(camera) {
