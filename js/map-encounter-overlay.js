@@ -194,7 +194,8 @@
       const preview = !current && !reachable;
       const canMove = reachable && !game.awaitingResultAck && !game.activeEncounter && !walking;
       const handler = canMove ? `onclick="event.preventDefault();event.stopImmediatePropagation();window.moveHeroToNode('${id}')"` : "";
-      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${hasGuaranteedEvent(id) ? "event-node" : ""} ${walking?.to === id ? "walk-target" : ""} ${walking?.from === id ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${handler} ${canMove ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
+      const icon = def.icon || "•";
+      return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${hasGuaranteedEvent(id) ? "event-node" : ""} ${walking?.to === id ? "walk-target" : ""} ${walking?.from === id ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" data-icon-type="${def.iconType || def.locationType || def.kind}" style="left:${point.x}%;top:${point.y}%" ${handler} ${canMove ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span class="gd-map-node-icon">${icon}</span></button>`;
     }).join("");
   }
 
