@@ -60,7 +60,15 @@
   height: 380px;
   background-position: var(--map-focus-x, 50%) var(--map-focus-y, 50%);
   background-size: 245%;
-  transition: background-position 220ms ease;
+  transition: none !important;
+  contain: layout paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.gd-focused-node-map.is-moving,
+.gd-focused-node-map.is-moving * {
+  transition: none !important;
 }
 
 .gd-map-line-layer {
@@ -133,8 +141,8 @@
 .gd-map-player-token {
   position: absolute;
   z-index: 6;
-  left: var(--walk-from-x);
-  top: var(--walk-from-y);
+  left: 50%;
+  top: 50%;
   width: 28px;
   height: 28px;
   display: grid;
@@ -147,6 +155,7 @@
   box-shadow: 0 0 0 2px #000, 0 0 18px rgba(245, 226, 164, .82);
   transform: translate(-50%, -50%);
   pointer-events: none;
+  will-change: transform;
 }
 
 .gd-map-player-token span {
@@ -158,8 +167,12 @@
   animation: gd-player-idle 1100ms ease-in-out infinite alternate;
 }
 
-.gd-map-player-token.walking {
-  animation: gd-player-walk 560ms ease-in-out forwards;
+.gd-map-player-token.walking,
+.gd-map-player-token.camera-centered {
+  animation: none !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 @keyframes gd-player-idle {
