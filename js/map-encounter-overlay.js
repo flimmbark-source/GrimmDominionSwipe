@@ -113,10 +113,11 @@
   }
 
   function inViewport(point) { return point.x >= -8 && point.x <= 108 && point.y >= -8 && point.y <= 108; }
+  function edgeId(a, b) { return [a, b].sort().join("--"); }
 
-  function localEdges(centerId, visible, camera) {
+  function edgeModels(centerId, visible, camera) {
     const direct = new Set(connected(centerId));
-    const lines = Object.entries(map().nodes).flatMap(([id, def]) => {
+    return Object.entries(map().nodes).flatMap(([id, def]) => {
       if (!visible.has(id)) return [];
       return def.connectsTo
         .filter(target => id < target && visible.has(target))
@@ -124,11 +125,15 @@
         .map(target => {
           const a = projectNode(id, camera);
           const b = projectNode(target, camera);
-          if (!inViewport(a) && !inViewport(b)) return "";
-          const primary = id === centerId || target === centerId;
-          return `<line class="${primary ? "primary" : "preview"}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" />`;
-        });
-    }).join("");
+          if (!inViewport(a) && !inViewport(b)) return null;
+          return { id: edgeId(id, target), from: id, to: target, a, b, primary: id === centerId || target === centerId };
+        })
+        .filter(Boolean);
+    });
+  }
+
+  function localEdges(centerId, visible, camera) {
+    const lines = edgeModels(centerId, visible, camera).map(edge => `<line data-edge-id="${edge.id}" class="${edge.primary ? "primary" : "preview"}" x1="${edge.a.x}" y1="${edge.a.y}" x2="${edge.b.x}" y2="${edge.b.y}" />`).join("");
     return `<svg class="gd-map-line-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>`;
   }
 
@@ -157,7 +162,7 @@
       const reachable = direct.has(id);
       const preview = !current && !reachable;
       const canMove = reachable && !game.awaitingResultAck && !game.activeEncounter && !walking;
-      const handler = canMove ? `onclick="event.preventDefault();event.stopPropagation();window.moveHeroToNode('${id}')"` : "";
+      const handler = canMove ? `onclick="event.preventDefault();event.stopImmediatePropagation();window.moveHeroToNode('${id}')"` : "";
       return `<button class="gd-map-node ${def.kind} ${current ? "current" : ""} ${reachable ? "reachable" : ""} ${preview ? "preview" : ""} ${hasGuaranteedEvent(id) ? "event-node" : ""} ${walking?.to === id ? "walk-target" : ""} ${walking?.from === id ? "walk-origin" : ""} ${pressureClass(id)}" data-node-id="${id}" style="left:${point.x}%;top:${point.y}%" ${handler} ${canMove ? "" : "disabled"} title="${def.label}\n${def.tags.join(", ")}"><span></span></button>`;
     }).join("");
   }
@@ -228,8 +233,16 @@
     const bgY = clamp(camera.y, 12, 88);
     mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
     mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
-    mapEl.querySelector(".gd-map-line-layer")?.remove();
-    mapEl.insertAdjacentHTML("afterbegin", localEdges(centerId, visible, camera));
+
+    edgeModels(centerId, visible, camera).forEach(edge => {
+      const line = mapEl.querySelector(`[data-edge-id="${edge.id}"]`);
+      if (!line) return;
+      line.setAttribute("x1", edge.a.x);
+      line.setAttribute("y1", edge.a.y);
+      line.setAttribute("x2", edge.b.x);
+      line.setAttribute("y2", edge.b.y);
+    });
+
     visible.forEach(id => {
       const button = mapEl.querySelector(`[data-node-id="${id}"]`);
       if (!button) return;
@@ -248,6 +261,8 @@
     connected(id).forEach(next => nodeState(next).visible = true);
     game.heroTimer = Math.max(0, game.heroTimer - moveCost(id));
     game.pendingNodeMove = null;
+    const mapEl = document.querySelector(".gd-focused-node-map");
+    mapEl?.classList.remove("is-moving");
     const cardId = window.drawCardForNode(id);
     if (!openNodeEncounter(id, cardId)) {
       game.currentCardId = null;
