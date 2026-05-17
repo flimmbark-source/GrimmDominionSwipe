@@ -2,7 +2,8 @@
 (() => {
   const LOCAL_DEPTH = 2;
   const LOCAL_ZOOM = 2.45;
-  const MAP_ZOOM_PERCENT = `${LOCAL_ZOOM * 100}%`;
+  const MAP_SIZE_PERCENT = LOCAL_ZOOM * 100;
+  const MAP_ASSET = "assets/maps/whispermoor-village-bg.png";
   const WALK_MS = 560;
   const EVENT_ENTER_MS = 240;
   const EVENT_EXIT_MS = 220;
@@ -113,9 +114,26 @@
     return { x: 50 + (def.x - camera.x) * LOCAL_ZOOM, y: 50 + (def.y - camera.y) * LOCAL_ZOOM };
   }
 
-  function syncMapBackgroundZoom(root = document) {
-    root.querySelectorAll?.(".gd-focused-node-map").forEach(mapEl => {
-      mapEl.style.setProperty("background-size", MAP_ZOOM_PERCENT, "important");
+  function mapArtStyle(camera) {
+    return {
+      left: 50 - camera.x * LOCAL_ZOOM,
+      top: 50 - camera.y * LOCAL_ZOOM,
+      size: MAP_SIZE_PERCENT,
+    };
+  }
+
+  function renderMapArtLayer(camera) {
+    const style = mapArtStyle(camera);
+    return `<img class="gd-map-art-layer" src="${MAP_ASSET}" alt="" aria-hidden="true" draggable="false" style="left:${style.left}%;top:${style.top}%;width:${style.size}%;height:${style.size}%"><div class="gd-map-shade-layer" aria-hidden="true"></div>`;
+  }
+
+  function syncMapArtLayer(camera = cameraPoint(), root = document) {
+    const style = mapArtStyle(camera);
+    root.querySelectorAll?.(".gd-focused-node-map .gd-map-art-layer").forEach(img => {
+      img.style.left = `${style.left}%`;
+      img.style.top = `${style.top}%`;
+      img.style.width = `${style.size}%`;
+      img.style.height = `${style.size}%`;
     });
   }
 
@@ -196,14 +214,12 @@
     const center = nodeDef(centerId);
     const visible = localSet(centerId);
     const tags = nodeTagHtml(center);
-    const bgX = camera.x;
-    const bgY = camera.y;
     const hint = move ? `Moving to ${nodeDef(move.to)?.label}.` : (game.result || "Tap a connected node on the map to move.");
     return `<div class="gd-main-scroll gd-map-first-screen map-mode ${game.eventTransition || "active"}">
       <section class="gd-top single-right"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-title">Village</div><div class="gd-subtitle">${move ? nodeDef(move.to)?.label : center.label}</div></div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${move ? `To ${nodeDef(move.to)?.label}` : center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
-        <div class="gd-focused-node-map gd-node-map is-camera-following" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%;background-size:${MAP_ZOOM_PERCENT}">${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}</div>
+        <div class="gd-focused-node-map gd-node-map is-camera-following">${renderMapArtLayer(camera)}${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}</div>
         <div class="gd-node-current-readout">${nodeReadoutHtml(centerId)}</div>
       </section>
       <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}
@@ -218,8 +234,6 @@
     const center = nodeDef(centerId);
     const camera = cameraPoint();
     const visible = localSet(centerId);
-    const bgX = camera.x;
-    const bgY = camera.y;
 
     screen.querySelector(".gd-top .gd-subtitle")?.replaceChildren(document.createTextNode(center.label));
     screen.querySelector(".gd-focused-map-head small")?.replaceChildren(document.createTextNode(center.label));
@@ -231,10 +245,7 @@
     if (toast) toast.textContent = game.result;
 
     mapEl.classList.remove("is-moving");
-    mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
-    mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
-    mapEl.style.setProperty("background-size", MAP_ZOOM_PERCENT, "important");
-    mapEl.innerHTML = `${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}`;
+    mapEl.innerHTML = `${renderMapArtLayer(camera)}${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}`;
     window.updateTimerDom?.();
     return true;
   }
@@ -315,10 +326,10 @@
 
   function afterExploreRender() {
     restoreVisibleCardFlavor();
-    syncMapBackgroundZoom();
+    syncMapArtLayer();
     fillEventCardFooterGap();
     requestAnimationFrame(() => {
-      syncMapBackgroundZoom();
+      syncMapArtLayer();
       fillEventCardFooterGap();
     });
   }
@@ -337,11 +348,7 @@
     const camera = cameraPoint();
     const centerId = move.from;
     const visible = localSet(centerId);
-    const bgX = camera.x;
-    const bgY = camera.y;
-    mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
-    mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
-    mapEl.style.setProperty("background-size", MAP_ZOOM_PERCENT, "important");
+    syncMapArtLayer(camera, mapEl);
 
     edgeModels(centerId, visible, camera).forEach(edge => {
       const line = mapEl.querySelector(`[data-edge-id="${edge.id}"]`);
