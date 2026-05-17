@@ -1,14 +1,15 @@
-// Loads calibrated map coordinates, and adds ?mapDebug=1 tools when requested.
+// Loads calibrated map coordinates/connections, and adds ?mapDebug=1 tools when requested.
 (() => {
-  function loadCalibratedCoordinates() {
-    if (window.VILLAGE_IMAGE_COORDS || document.querySelector('script[data-village-image-coords]')) return;
+  function loadMapUtilityScript(src, dataKey, readyFlag) {
+    if (window[readyFlag] || document.querySelector(`script[${dataKey}]`)) return;
     const script = document.createElement("script");
-    script.src = "js/village-map-image-coordinates.js";
-    script.dataset.villageImageCoords = "true";
+    script.src = src;
+    script.setAttribute(dataKey, "true");
     document.body.appendChild(script);
   }
 
-  loadCalibratedCoordinates();
+  loadMapUtilityScript("js/village-map-image-coordinates.js", "data-village-image-coords", "VILLAGE_IMAGE_COORDS");
+  loadMapUtilityScript("js/village-map-connection-overrides.js", "data-village-connection-overrides", "VILLAGE_CONNECTION_OVERRIDES");
 
   const enabled = new URLSearchParams(window.location.search).get("mapDebug") === "1";
   if (!enabled) return;
