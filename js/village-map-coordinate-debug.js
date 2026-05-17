@@ -16,6 +16,7 @@
   loadMapUtilityScript("js/village-node-display-overrides.js", "data-village-node-display-overrides", "VILLAGE_NODE_DISPLAY_OVERRIDES");
   loadMapUtilityScript("js/village-map-connection-overrides.js", "data-village-connection-overrides", "VILLAGE_CONNECTION_OVERRIDES");
   loadMapUtilityScript("js/village-node-display-runtime.js", "data-village-node-display-runtime", "VILLAGE_NODE_DISPLAY_RUNTIME");
+  loadMapUtilityScript("js/village-current-node-anchor.js", "data-village-current-node-anchor", "VILLAGE_CURRENT_NODE_ANCHOR");
 
   const enabled = new URLSearchParams(window.location.search).get("mapDebug") === "1";
   if (!enabled) return;
