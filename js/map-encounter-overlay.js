@@ -171,6 +171,15 @@
     return `<div class="gd-map-player-token ${game.pendingNodeMove ? "walking camera-centered" : "idle"}" style="left:50%;top:50%"><span>♟</span></div>`;
   }
 
+  function nodeTagHtml(center) {
+    return center.tags.slice(0, 4).map(tag => `<b>${tag}</b>`).join("");
+  }
+
+  function nodeReadoutHtml(centerId) {
+    const state = nodeState(centerId);
+    return `<span>Noise ${state.noise} · Danger ${state.danger} · ${chance(centerId)}% risk</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span>`;
+  }
+
   function renderMapScreen() {
     if (!hasMap()) return renderExplore();
     ensureNodeState?.();
@@ -178,9 +187,8 @@
     const camera = cameraPoint();
     const centerId = move?.from || currentNodeId();
     const center = nodeDef(centerId);
-    const state = nodeState(centerId);
     const visible = localSet(centerId);
-    const tags = center.tags.slice(0, 4).map(tag => `<b>${tag}</b>`).join("");
+    const tags = nodeTagHtml(center);
     const bgX = clamp(camera.x, 12, 88);
     const bgY = clamp(camera.y, 12, 88);
     const hint = move ? `Moving to ${nodeDef(move.to)?.label}.` : (game.result || "Tap a connected node on the map to move.");
@@ -189,10 +197,38 @@
       <section class="gd-focused-map-card">
         <div class="gd-focused-map-head"><div><strong>Whispermoor Village</strong><small>${move ? `To ${nodeDef(move.to)?.label}` : center.label}</small></div><div class="gd-node-tags">${tags}</div></div>
         <div class="gd-focused-node-map gd-node-map is-camera-following" style="--map-focus-x:${bgX}%;--map-focus-y:${bgY}%">${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}</div>
-        <div class="gd-node-current-readout"><span>Noise ${state.noise} · Danger ${state.danger} · ${chance(centerId)}% risk</span><span>${state.threats.length ? `Threats: ${state.threats.length}` : "No active threat"}</span></div>
+        <div class="gd-node-current-readout">${nodeReadoutHtml(centerId)}</div>
       </section>
       <div class="gd-result-toast">${hint}</div>${renderHeroFooter()}
     </div>`;
+  }
+
+  function refreshArrivedMapDom(centerId) {
+    const mapEl = document.querySelector(".gd-focused-node-map");
+    const screen = document.querySelector(".gd-map-first-screen");
+    if (!mapEl || !screen || !nodeDef(centerId)) return false;
+
+    const center = nodeDef(centerId);
+    const camera = cameraPoint();
+    const visible = localSet(centerId);
+    const bgX = clamp(camera.x, 12, 88);
+    const bgY = clamp(camera.y, 12, 88);
+
+    screen.querySelector(".gd-top .gd-subtitle")?.replaceChildren(document.createTextNode(center.label));
+    screen.querySelector(".gd-focused-map-head small")?.replaceChildren(document.createTextNode(center.label));
+    const tagRow = screen.querySelector(".gd-node-tags");
+    if (tagRow) tagRow.innerHTML = nodeTagHtml(center);
+    const readout = screen.querySelector(".gd-node-current-readout");
+    if (readout) readout.innerHTML = nodeReadoutHtml(centerId);
+    const toast = screen.querySelector(".gd-result-toast");
+    if (toast) toast.textContent = game.result;
+
+    mapEl.classList.remove("is-moving");
+    mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
+    mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
+    mapEl.innerHTML = `${localEdges(centerId, visible, camera)}${renderLocalNodes(centerId, visible, camera)}${renderPlayerToken()}`;
+    window.updateTimerDom?.();
+    return true;
   }
 
   function cardFlavorText(card) {
@@ -281,8 +317,8 @@
     connected(id).forEach(next => nodeState(next).visible = true);
     game.heroTimer = Math.max(0, game.heroTimer - moveCost(id));
     game.pendingNodeMove = null;
-    const mapEl = document.querySelector(".gd-focused-node-map");
-    mapEl?.classList.remove("is-moving");
+    document.querySelector(".gd-focused-node-map")?.classList.remove("is-moving");
+
     const cardId = window.drawCardForNode(id);
     if (!openNodeEncounter(id, cardId)) {
       game.currentCardId = null;
@@ -290,7 +326,7 @@
       game.eventTransition = null;
       game.result = `Moved to ${nodeDef(id).label}.`;
       game.log.unshift(game.result);
-      render();
+      if (!refreshArrivedMapDom(id)) render();
     }
   }
 
