@@ -102,12 +102,7 @@
     const to = nodeDef(move.to);
     const t = clamp(((performance.now() - move.startedAt) / WALK_MS), 0, 1);
     const eased = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    return {
-      x: from.x + (to.x - from.x) * eased,
-      y: from.y + (to.y - from.y) * eased,
-      centerId: move.from,
-      moving: true,
-    };
+    return { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased, centerId: move.from, moving: true };
   }
 
   function projectNode(id, camera) {
@@ -219,6 +214,28 @@
   window.drawCardForNode = function drawCardForNode(id) { return drawNodeEncounter(id); };
   drawCardForNode = window.drawCardForNode;
 
+  function applyCameraFrame() {
+    const mapEl = document.querySelector(".gd-focused-node-map");
+    if (!mapEl || !game.pendingNodeMove) return;
+    const move = game.pendingNodeMove;
+    const camera = cameraPoint();
+    const centerId = move.from;
+    const visible = localSet(centerId);
+    const bgX = clamp(camera.x, 12, 88);
+    const bgY = clamp(camera.y, 12, 88);
+    mapEl.style.setProperty("--map-focus-x", `${bgX}%`);
+    mapEl.style.setProperty("--map-focus-y", `${bgY}%`);
+    mapEl.querySelector(".gd-map-line-layer")?.remove();
+    mapEl.insertAdjacentHTML("afterbegin", localEdges(centerId, visible, camera));
+    visible.forEach(id => {
+      const button = mapEl.querySelector(`[data-node-id="${id}"]`);
+      if (!button) return;
+      const point = projectNode(id, camera);
+      button.style.left = `${point.x}%`;
+      button.style.top = `${point.y}%`;
+    });
+  }
+
   function completeMove(id) {
     if (game.pendingMoveFrame) cancelAnimationFrame(game.pendingMoveFrame);
     game.pendingMoveFrame = null;
@@ -241,7 +258,7 @@
 
   function animateCameraMove() {
     if (!game.pendingNodeMove) return;
-    render();
+    applyCameraFrame();
     if (performance.now() - game.pendingNodeMove.startedAt < WALK_MS) {
       game.pendingMoveFrame = requestAnimationFrame(animateCameraMove);
     }
@@ -253,7 +270,12 @@
     game.pendingNodeMove = { from, to: id, startedAt: performance.now() };
     game.result = `Moving to ${nodeDef(id).label}.`;
     if (game.pendingMoveFrame) cancelAnimationFrame(game.pendingMoveFrame);
-    render();
+    const toast = document.querySelector(".gd-result-toast");
+    if (toast) toast.textContent = game.result;
+    const mapEl = document.querySelector(".gd-focused-node-map");
+    mapEl?.classList.add("is-moving");
+    mapEl?.querySelectorAll(".gd-map-node").forEach(node => node.disabled = true);
+    applyCameraFrame();
     game.pendingMoveFrame = requestAnimationFrame(animateCameraMove);
     setTimeout(() => completeMove(id), WALK_MS);
     return true;
