@@ -14,16 +14,25 @@
   min-height: 0 !important;
   margin: 0 14px !important;
   display: grid !important;
-  grid-template-rows: minmax(0, 1fr) auto !important;
+  grid-template-rows: minmax(210px, 44%) minmax(0, 1fr) !important;
 }
 
 .gd-main-scroll:has(> .gd-card) > .gd-card .gd-card-art {
   height: auto !important;
-  min-height: 0 !important;
+  min-height: 210px !important;
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 .gd-main-scroll:has(> .gd-card) > .gd-card .gd-card-body {
   min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  align-content: start !important;
+}
+
+.gd-main-scroll:has(> .gd-card) > .gd-card .gd-choice-row {
+  align-self: end !important;
 }
 
 .gd-main-scroll:has(> .gd-card) > .gd-footer-chip,
@@ -36,6 +45,14 @@
 @media (max-height: 700px) {
   .gd-main-scroll:has(> .gd-card) {
     grid-template-rows: auto auto minmax(0, 1fr) 46px !important;
+  }
+
+  .gd-main-scroll:has(> .gd-card) > .gd-card {
+    grid-template-rows: minmax(170px, 40%) minmax(0, 1fr) !important;
+  }
+
+  .gd-main-scroll:has(> .gd-card) > .gd-card .gd-card-art {
+    min-height: 170px !important;
   }
 
   .gd-main-scroll:has(> .gd-card) > .gd-footer-chip,
