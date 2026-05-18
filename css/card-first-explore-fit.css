@@ -26,14 +26,23 @@
 
 .gd-main-scroll:has(> .gd-card) > .gd-card .gd-card-body {
   min-height: 0 !important;
-  display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
-  align-content: start !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-content: stretch !important;
   padding-top: 34px !important;
 }
 
+.gd-main-scroll:has(> .gd-card) > .gd-card .gd-card-text {
+  flex: 0 1 auto !important;
+}
+
+.gd-main-scroll:has(> .gd-card) > .gd-card .gd-action-result {
+  margin-top: auto !important;
+}
+
 .gd-main-scroll:has(> .gd-card) > .gd-card .gd-choice-row {
-  align-self: end !important;
+  margin-top: auto !important;
+  align-self: stretch !important;
 }
 
 .gd-main-scroll:has(> .gd-card) > .gd-footer-chip,
