@@ -48,6 +48,11 @@
     autoAckTimer = null;
   }
 
+  function actionBatchKey(action) {
+    if (!action) return "";
+    return [action.choiceLabel, action.outcomeType, action.roll, ...(action.ghosts || []).map(g => `${g.kind}:${g.text}`)].join("|");
+  }
+
   function scheduleAutoAck() {
     clearAutoAck();
     if (!game?.awaitingResultAck || !game?.lastAction) return;
@@ -57,12 +62,12 @@
 
     autoAckTimer = setTimeout(() => {
       if (!game.awaitingResultAck || !game.lastAction) return;
-      window.handoffRewardGhostsNow?.();
+      window.launchRewardGhostHandoffsFromData?.(game.lastAction.ghosts || [], actionBatchKey(game.lastAction));
       game.resultReady = true;
       setTimeout(() => {
         if (!game.awaitingResultAck || !game.lastAction) return;
         try { acknowledgeResult(); } catch (_) {}
-      }, 60);
+      }, 90);
     }, delay);
   }
 
