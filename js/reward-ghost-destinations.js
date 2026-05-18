@@ -106,11 +106,11 @@
   };
 
   const portalGhostNow = (ghost) => {
-    if (!ghost || ghost.dataset.portalCloned) return;
-    if (!ghost.isConnected) return;
+    if (!ghost || ghost.dataset.portalCloned) return false;
+    if (!ghost.isConnected) return false;
 
     const rect = ghost.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1) return;
+    if (rect.width < 1 || rect.height < 1) return false;
 
     ghost.dataset.portalCloned = "true";
     const destination = ghost.dataset.destination || destinationForGhost(ghost);
@@ -124,6 +124,7 @@
       destination,
     });
     ghost.style.visibility = "hidden";
+    return true;
   };
 
   const portalGhost = (ghost, delay = FLOAT_BEFORE_TAB_FLIGHT_MS) => {
@@ -137,20 +138,22 @@
   };
 
   window.handoffRewardGhostsNow = function handoffRewardGhostsNow() {
+    let count = 0;
     document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
       const timer = portalTimers.get(ghost);
       if (timer) {
         clearTimeout(timer);
         portalTimers.delete(ghost);
       }
-      portalGhostNow(ghost);
+      if (portalGhostNow(ghost)) count += 1;
     });
+    return count;
   };
 
   window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData(ghosts = [], batchKey = "") {
-    if (!ghosts.length) return;
+    if (!ghosts.length) return 0;
     const key = batchKey || JSON.stringify(ghosts.map(g => [g.kind, g.text, g.className]));
-    if (key && key === lastDataBatchKey) return;
+    if (key && key === lastDataBatchKey) return 0;
     lastDataBatchKey = key;
 
     const cardRect = document.querySelector(".gd-card")?.getBoundingClientRect();
@@ -179,6 +182,7 @@
       ghost.dataset.portalCloned = "true";
       ghost.style.visibility = "hidden";
     });
+    return ghosts.length;
   };
 
   const observer = new MutationObserver((mutations) => {
