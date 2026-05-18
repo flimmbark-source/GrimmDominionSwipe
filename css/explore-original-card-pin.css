@@ -1,9 +1,11 @@
 /* Original Explore screen only: preserve the real event-card markup, pin the Goblin bar above nav, and keep card descriptions visible. */
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) {
+  --gd-explore-footer-height: 50px;
+  position: relative !important;
   display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
   gap: 0 !important;
-  padding-bottom: 0 !important;
+  padding-bottom: var(--gd-explore-footer-height) !important;
 }
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-result-toast {
@@ -26,24 +28,23 @@
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip,
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip.slim {
-  align-self: end !important;
-  margin: 0 14px !important;
-  height: 50px !important;
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 0 !important;
+  margin: 0 !important;
+  height: var(--gd-explore-footer-height) !important;
+  z-index: 5 !important;
 }
 
 @media (max-height: 700px) {
   .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) {
-    grid-template-rows: auto auto minmax(0, 1fr) 46px !important;
+    --gd-explore-footer-height: 46px;
   }
 
   .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-card-text {
     display: -webkit-box !important;
     -webkit-box-orient: vertical !important;
     -webkit-line-clamp: 2 !important;
-  }
-
-  .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip,
-  .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip.slim {
-    height: 46px !important;
   }
 }
