@@ -46,6 +46,27 @@
   animation: gdGhostPortalToTab 2200ms cubic-bezier(.2, .72, .2, 1) forwards !important;
 }
 
+.gd-ghost-portal.gold,
+.gd-ghost-handoff.gold { --ghost-color: #e4b84e; }
+.gd-ghost-portal.damage,
+.gd-ghost-handoff.damage { --ghost-color: #f05c5c; }
+.gd-ghost-portal.status,
+.gd-ghost-handoff.status { --ghost-color: #7ce58d; }
+.gd-ghost-portal.noise,
+.gd-ghost-handoff.noise { --ghost-color: #b78cff; }
+.gd-ghost-portal.item,
+.gd-ghost-handoff.item { --ghost-color: #71d5ff; }
+.gd-ghost-portal.xp,
+.gd-ghost-handoff.xp { --ghost-color: #f3ec83; }
+.gd-ghost-portal.food,
+.gd-ghost-handoff.food { --ghost-color: #cf9f5a; }
+.gd-ghost-portal.heal,
+.gd-ghost-handoff.heal { --ghost-color: #5ff08a; }
+.gd-ghost-portal.stat,
+.gd-ghost-handoff.stat { --ghost-color: #88d8ff; }
+.gd-ghost-portal.time,
+.gd-ghost-handoff.time { --ghost-color: #f0df7a; }
+
 @keyframes gdGhostPortalToTab {
   0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   28% { opacity: 1; transform: translate(-50%, -32px) scale(1.04); }
