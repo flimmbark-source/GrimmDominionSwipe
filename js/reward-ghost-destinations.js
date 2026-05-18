@@ -1,8 +1,26 @@
 (() => {
-  const FLOAT_BEFORE_TAB_FLIGHT_MS = 1150;
+  // Base reward ghosts wait 780ms before appearing, so this gives them about
+  // a full visible second to rise before they become target-bound portal ghosts.
+  const FLOAT_BEFORE_TAB_FLIGHT_MS = 1850;
   const STACK_GAP_PX = 18;
   const portalTimers = new WeakMap();
-  let lastDataBatchKey = "";
+
+  const GHOST_COLORS = {
+    gold: "#e4b84e",
+    damage: "#f05c5c",
+    status: "#7ce58d",
+    noise: "#b78cff",
+    item: "#71d5ff",
+    xp: "#f3ec83",
+    food: "#cf9f5a",
+    heal: "#5ff08a",
+    stat: "#88d8ff",
+    time: "#f0df7a",
+    card: "#71d5ff",
+  };
+
+  const rewardKindFromClass = (className = "") =>
+    Object.keys(GHOST_COLORS).find(kind => className.split(/\s+/).includes(kind)) || "status";
 
   const destinationForGhost = (ghost) => {
     const text = (ghost.textContent || "").toLowerCase();
@@ -20,19 +38,6 @@
     if (ghost.classList.contains("status")) return "hero";
     if (ghost.classList.contains("xp")) return "hero";
     if (ghost.classList.contains("noise")) return "log";
-    return "hero";
-  };
-
-  const destinationForData = (ghost) => {
-    const kind = ghost?.kind || "";
-    const className = ghost?.className || "";
-    const text = String(ghost?.text || "").toLowerCase();
-    if (className.includes("item") && (text.includes("route") || text.includes("tunnel") || text.includes("villager") || text.includes("added"))) return "explore";
-    if (kind === "item" || className.includes("item")) return "inventory";
-    if (kind === "gold" || kind === "food" || className.includes("gold") || className.includes("food")) return "inventory";
-    if (kind === "time" || className.includes("time")) return "timer";
-    if (kind === "damage" || kind === "heal" || className.includes("damage") || className.includes("heal")) return "hp";
-    if (kind === "noise" || className.includes("noise")) return "log";
     return "hero";
   };
 
@@ -57,8 +62,6 @@
     const active = [...document.querySelectorAll(`.gd-ghost-portal[data-destination="${destination}"]`)];
     return active.length;
   };
-
-  const activePortalCount = () => document.querySelectorAll(".gd-ghost-portal, .gd-ghost-handoff").length;
 
   const targetPoint = (destination, targetRect, stackIndex) => {
     const fallbackX = window.innerWidth / 2;
@@ -91,13 +94,17 @@
     const stackIndex = activeStackIndex(destination);
     const point = targetPoint(destination, targetRect, stackIndex);
     const clone = document.createElement("div");
+    const kind = rewardKindFromClass(className);
 
     clone.className = `${className || ""} gd-ghost-portal to-${destination}`.replace("gd-reward-ghost", "").trim();
+    clone.classList.add(kind);
     clone.dataset.destination = destination;
     clone.innerHTML = html;
     clone.style.left = `${left}px`;
     clone.style.top = `${top}px`;
     clone.style.bottom = "auto";
+    clone.style.setProperty("--ghost-color", GHOST_COLORS[kind] || GHOST_COLORS.status);
+    clone.style.setProperty("color", `var(--ghost-color)`);
     clone.style.setProperty("--handoff-target-x", `${point.x}px`);
     clone.style.setProperty("--handoff-target-y", `${point.y}px`);
 
@@ -140,7 +147,7 @@
   };
 
   window.handoffRewardGhostsNow = function handoffRewardGhostsNow() {
-    let count = activePortalCount();
+    let count = document.querySelectorAll(".gd-ghost-portal").length;
     document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
       const timer = portalTimers.get(ghost);
       if (timer) {
@@ -152,39 +159,9 @@
     return count;
   };
 
-  window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData(ghosts = [], batchKey = "") {
-    if (!ghosts.length || activePortalCount() > 0) return 0;
-    const key = batchKey || JSON.stringify(ghosts.map(g => [g.kind, g.text, g.className]));
-    if (key && key === lastDataBatchKey) return 0;
-    lastDataBatchKey = key;
-
-    const cardRect = document.querySelector(".gd-card")?.getBoundingClientRect();
-    const baseLeft = cardRect ? cardRect.left + cardRect.width / 2 : window.innerWidth / 2;
-    const baseTop = cardRect ? cardRect.top + cardRect.height * 0.56 : window.innerHeight * 0.45;
-    const spread = Math.min(52, Math.max(26, (cardRect?.width || 320) / 7));
-    const centerOffset = (ghosts.length - 1) / 2;
-
-    ghosts.forEach((ghost, index) => {
-      const destination = destinationForData(ghost);
-      const left = baseLeft + (index - centerOffset) * spread;
-      const top = baseTop + (index % 2) * 14;
-      const className = `gd-ghost-handoff ${ghost.className || ghost.kind || "status"}`;
-      const icon = ghost.icon || "✦";
-      const text = ghost.text || "Reward";
-      createPortalClone({
-        className,
-        html: `<span class="ghost-icon">${icon}</span><span class="ghost-text">${text}</span>`,
-        left,
-        top,
-        destination,
-      });
-    });
-
-    document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
-      ghost.dataset.portalCloned = "true";
-      ghost.style.visibility = "hidden";
-    });
-    return ghosts.length;
+  // Keep this only as a last-resort API for old callers. Normal result flow should use visible ghosts.
+  window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData() {
+    return 0;
   };
 
   const observer = new MutationObserver((mutations) => {
