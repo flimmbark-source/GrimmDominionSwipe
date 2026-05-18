@@ -17,6 +17,22 @@
   height: 100% !important;
   min-height: 0 !important;
   margin: 0 14px !important;
+  display: grid !important;
+  grid-template-rows: minmax(176px, 38%) minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card .gd-card-art {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card .gd-card-body {
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-bottom: 10px !important;
+  overflow: hidden !important;
 }
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-card-text {
@@ -24,6 +40,21 @@
   -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 3 !important;
   overflow: hidden !important;
+  flex: 0 1 auto !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-swipe-label {
+  display: none !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-choice-row {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-action-result {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
 }
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip,
@@ -40,6 +71,10 @@
 @media (max-height: 700px) {
   .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) {
     --gd-explore-footer-height: 46px;
+  }
+
+  .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card {
+    grid-template-rows: minmax(150px, 34%) minmax(0, 1fr) !important;
   }
 
   .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-card-text {
