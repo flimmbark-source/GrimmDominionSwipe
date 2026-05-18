@@ -41,7 +41,7 @@
     setImportant(card, "height", px(targetHeight));
     setImportant(card, "min-height", px(targetHeight));
     setImportant(card, "display", "grid");
-    setImportant(card, "grid-template-rows", "minmax(150px, 34%) minmax(0, 1fr)");
+    setImportant(card, "grid-template-rows", "minmax(210px, 48%) minmax(0, 1fr)");
     setImportant(card, "overflow", "hidden");
 
     if (body) {
