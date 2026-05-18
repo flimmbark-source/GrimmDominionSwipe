@@ -1,9 +1,5 @@
 (() => {
-  // Base reward ghosts wait 780ms before appearing, so this gives them about
-  // a full visible second to rise before they become target-bound portal ghosts.
-  const FLOAT_BEFORE_TAB_FLIGHT_MS = 1850;
   const STACK_GAP_PX = 18;
-  const portalTimers = new WeakMap();
 
   const GHOST_COLORS = {
     gold: "#e4b84e",
@@ -136,43 +132,17 @@
     return true;
   };
 
-  const portalGhost = (ghost, delay = FLOAT_BEFORE_TAB_FLIGHT_MS) => {
-    if (!ghost || ghost.dataset.portalCloned || portalTimers.has(ghost)) return;
-    ghost.dataset.destination = destinationForGhost(ghost);
-    const timer = window.setTimeout(() => {
-      portalTimers.delete(ghost);
-      portalGhostNow(ghost);
-    }, delay);
-    portalTimers.set(ghost, timer);
-  };
-
   window.handoffRewardGhostsNow = function handoffRewardGhostsNow() {
     let count = document.querySelectorAll(".gd-ghost-portal").length;
-    document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
-      const timer = portalTimers.get(ghost);
-      if (timer) {
-        clearTimeout(timer);
-        portalTimers.delete(ghost);
-      }
+    document.querySelectorAll(".gd-reward-ghost:not([data-portal-cloned])").forEach(ghost => {
       if (portalGhostNow(ghost)) count += 1;
     });
     return count;
   };
 
-  // Keep this only as a last-resort API for old callers. Normal result flow should use visible ghosts.
+  // No automatic observer handoff. Visible ghosts rise first; result-overlay-auto-advance
+  // calls handoffRewardGhostsNow() once before it advances to the next event.
   window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData() {
     return 0;
   };
-
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (!(node instanceof HTMLElement)) continue;
-        if (node.classList.contains("gd-reward-ghost")) portalGhost(node);
-        node.querySelectorAll?.(".gd-reward-ghost").forEach(portalGhost);
-      }
-    }
-  });
-
-  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
