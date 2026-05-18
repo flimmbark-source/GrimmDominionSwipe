@@ -57,8 +57,12 @@
 
     autoAckTimer = setTimeout(() => {
       if (!game.awaitingResultAck || !game.lastAction) return;
+      window.handoffRewardGhostsNow?.();
       game.resultReady = true;
-      try { acknowledgeResult(); } catch (_) {}
+      setTimeout(() => {
+        if (!game.awaitingResultAck || !game.lastAction) return;
+        try { acknowledgeResult(); } catch (_) {}
+      }, 60);
     }, delay);
   }
 
