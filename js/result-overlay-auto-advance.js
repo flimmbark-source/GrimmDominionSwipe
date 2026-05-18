@@ -4,8 +4,8 @@
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
-  const OVERLAY_MS = 1750;
-  const MIN_GHOST_MS = 1200;
+  const OVERLAY_MS = 2400;
+  const MIN_GHOST_MS = 2350;
   let autoAckTimer = null;
 
   function labelFor(type) {
@@ -48,11 +48,6 @@
     autoAckTimer = null;
   }
 
-  function actionBatchKey(action) {
-    if (!action) return "";
-    return [action.choiceLabel, action.outcomeType, action.roll, ...(action.ghosts || []).map(g => `${g.kind}:${g.text}`)].join("|");
-  }
-
   function scheduleAutoAck() {
     clearAutoAck();
     if (!game?.awaitingResultAck || !game?.lastAction) return;
@@ -62,15 +57,12 @@
 
     autoAckTimer = setTimeout(() => {
       if (!game.awaitingResultAck || !game.lastAction) return;
-      const visibleHandoffCount = window.handoffRewardGhostsNow?.() || 0;
-      if (!visibleHandoffCount) {
-        window.launchRewardGhostHandoffsFromData?.(game.lastAction.ghosts || [], actionBatchKey(game.lastAction));
-      }
+      window.handoffRewardGhostsNow?.();
       game.resultReady = true;
       setTimeout(() => {
         if (!game.awaitingResultAck || !game.lastAction) return;
         try { acknowledgeResult(); } catch (_) {}
-      }, 90);
+      }, 140);
     }, delay);
   }
 
