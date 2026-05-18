@@ -1,5 +1,9 @@
 // Map-first Explore flow: Explore is the map; encounters use the original card screen.
 (() => {
+  const visibleMapParams = new URLSearchParams(window.location.search);
+  const visibleMapMode = visibleMapParams.get("mapExplore") === "1" || visibleMapParams.get("mapCalibrate") === "1";
+  if (!visibleMapMode) return;
+
   const LOCAL_DEPTH = 2;
   const LOCAL_ZOOM = 2.45;
   const MAP_SIZE_PERCENT = LOCAL_ZOOM * 100;
