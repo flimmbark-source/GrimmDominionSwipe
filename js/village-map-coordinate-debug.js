@@ -1,31 +1,58 @@
 // Loads calibrated map coordinates/location graph/taxonomy/display/event/icon tools, and adds ?mapDebug=1 tools when requested.
 (() => {
-  function loadMapUtilityScript(src, dataKey, readyFlag) {
-    if (window[readyFlag] || document.querySelector(`script[${dataKey}]`)) return;
+  function scriptAlreadyLoaded(dataKey, readyFlag) {
+    return Boolean(window[readyFlag] || document.querySelector(`script[${dataKey}]`));
+  }
+
+  function loadMapUtilityScript(src, dataKey, readyFlag, done = () => {}) {
+    if (scriptAlreadyLoaded(dataKey, readyFlag)) {
+      done();
+      return;
+    }
     const script = document.createElement("script");
     script.src = src;
+    script.async = false;
     script.setAttribute(dataKey, "true");
+    script.onload = done;
+    script.onerror = done;
     document.body.appendChild(script);
+  }
+
+  function loadUtilitySequence(items, done = () => {}) {
+    const [next, ...rest] = items;
+    if (!next) {
+      done();
+      return;
+    }
+    loadMapUtilityScript(next.src, next.dataKey, next.readyFlag, () => loadUtilitySequence(rest, done));
   }
 
   const params = new URLSearchParams(window.location.search);
   const visibleMapMode = params.get("mapExplore") === "1" || params.get("mapCalibrate") === "1";
 
-  loadMapUtilityScript("js/village-map-image-coordinates.js", "data-village-image-coords", "VILLAGE_IMAGE_COORDS");
-  loadMapUtilityScript("js/village-location-inventory.js", "data-village-location-inventory", "VILLAGE_LOCATION_INVENTORY");
-  loadMapUtilityScript("js/village-location-graph-runtime.js", "data-village-location-graph-runtime", "VILLAGE_LOCATION_GRAPH_ACTIVE");
-  loadMapUtilityScript("js/village-node-icons.js", "data-village-node-icons", "VILLAGE_NODE_ICONS");
-  loadMapUtilityScript("js/village-card-taxonomy.js", "data-village-card-taxonomy", "VILLAGE_CARD_TAXONOMY");
-  loadMapUtilityScript("js/village-node-event-taxonomy-runtime.js", "data-village-node-event-taxonomy-runtime", "VILLAGE_NODE_EVENT_TAXONOMY_RUNTIME");
-  loadMapUtilityScript("js/village-node-event-exhaustion.js", "data-village-node-event-exhaustion", "VILLAGE_NODE_EVENT_EXHAUSTION");
+  const baseUtilities = [
+    { src: "js/village-map-image-coordinates.js", dataKey: "data-village-image-coords", readyFlag: "VILLAGE_IMAGE_COORDS" },
+    { src: "js/village-location-inventory.js", dataKey: "data-village-location-inventory", readyFlag: "VILLAGE_LOCATION_INVENTORY" },
+    { src: "js/village-location-graph-runtime.js", dataKey: "data-village-location-graph-runtime", readyFlag: "VILLAGE_LOCATION_GRAPH_ACTIVE" },
+    { src: "js/village-node-icons.js", dataKey: "data-village-node-icons", readyFlag: "VILLAGE_NODE_ICONS" },
+    { src: "js/village-card-taxonomy.js", dataKey: "data-village-card-taxonomy", readyFlag: "VILLAGE_CARD_TAXONOMY" },
+    { src: "js/village-node-event-taxonomy-runtime.js", dataKey: "data-village-node-event-taxonomy-runtime", readyFlag: "VILLAGE_NODE_EVENT_TAXONOMY_RUNTIME" },
+    { src: "js/village-node-event-exhaustion.js", dataKey: "data-village-node-event-exhaustion", readyFlag: "VILLAGE_NODE_EVENT_EXHAUSTION" },
+  ];
 
-  if (visibleMapMode) {
-    loadMapUtilityScript("js/village-node-display-overrides.js", "data-village-node-display-overrides", "VILLAGE_NODE_DISPLAY_OVERRIDES");
-    loadMapUtilityScript("js/village-node-display-runtime.js", "data-village-node-display-runtime", "VILLAGE_NODE_DISPLAY_RUNTIME");
-    loadMapUtilityScript("js/village-current-node-anchor.js", "data-village-current-node-anchor", "VILLAGE_CURRENT_NODE_ANCHOR");
-  } else {
-    loadMapUtilityScript("js/hidden-map-card-flow.js", "data-hidden-map-card-flow", "HIDDEN_MAP_CARD_FLOW");
-  }
+  const modeUtilities = visibleMapMode
+    ? [
+      { src: "js/village-node-display-overrides.js", dataKey: "data-village-node-display-overrides", readyFlag: "VILLAGE_NODE_DISPLAY_OVERRIDES" },
+      { src: "js/village-node-display-runtime.js", dataKey: "data-village-node-display-runtime", readyFlag: "VILLAGE_NODE_DISPLAY_RUNTIME" },
+      { src: "js/village-current-node-anchor.js", dataKey: "data-village-current-node-anchor", readyFlag: "VILLAGE_CURRENT_NODE_ANCHOR" },
+    ]
+    : [
+      { src: "js/hidden-map-card-flow.js", dataKey: "data-hidden-map-card-flow", readyFlag: "HIDDEN_MAP_CARD_FLOW" },
+    ];
+
+  loadUtilitySequence([...baseUtilities, ...modeUtilities], () => {
+    render?.();
+  });
 
   const enabled = params.get("mapDebug") === "1";
   if (!enabled) return;
