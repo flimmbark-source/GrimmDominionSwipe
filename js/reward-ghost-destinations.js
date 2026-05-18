@@ -58,6 +58,8 @@
     return active.length;
   };
 
+  const activePortalCount = () => document.querySelectorAll(".gd-ghost-portal, .gd-ghost-handoff").length;
+
   const targetPoint = (destination, targetRect, stackIndex) => {
     const fallbackX = window.innerWidth / 2;
     const fallbackY = destination === "timer" ? window.innerHeight * 0.38 : window.innerHeight - 32;
@@ -138,7 +140,7 @@
   };
 
   window.handoffRewardGhostsNow = function handoffRewardGhostsNow() {
-    let count = 0;
+    let count = activePortalCount();
     document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
       const timer = portalTimers.get(ghost);
       if (timer) {
@@ -151,7 +153,7 @@
   };
 
   window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData(ghosts = [], batchKey = "") {
-    if (!ghosts.length) return 0;
+    if (!ghosts.length || activePortalCount() > 0) return 0;
     const key = batchKey || JSON.stringify(ghosts.map(g => [g.kind, g.text, g.className]));
     if (key && key === lastDataBatchKey) return 0;
     lastDataBatchKey = key;
