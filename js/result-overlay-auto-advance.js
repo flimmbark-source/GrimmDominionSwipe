@@ -62,7 +62,10 @@
 
     autoAckTimer = setTimeout(() => {
       if (!game.awaitingResultAck || !game.lastAction) return;
-      window.launchRewardGhostHandoffsFromData?.(game.lastAction.ghosts || [], actionBatchKey(game.lastAction));
+      const visibleHandoffCount = window.handoffRewardGhostsNow?.() || 0;
+      if (!visibleHandoffCount) {
+        window.launchRewardGhostHandoffsFromData?.(game.lastAction.ghosts || [], actionBatchKey(game.lastAction));
+      }
       game.resultReady = true;
       setTimeout(() => {
         if (!game.awaitingResultAck || !game.lastAction) return;
