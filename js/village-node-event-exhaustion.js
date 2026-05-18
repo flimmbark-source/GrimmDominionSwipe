@@ -8,6 +8,10 @@
     return game?.mapState?.village?.nodes?.[id] || null;
   }
 
+  function nodeDef(id) {
+    return window.VILLAGE_NODE_MAP?.nodes?.[id] || null;
+  }
+
   function darkLordThreatCards(id) {
     const state = nodeState(id);
     if (!state) return [];
@@ -29,14 +33,44 @@
     if (cardId && !state.completedEventCardIds.includes(cardId)) state.completedEventCardIds.push(cardId);
   }
 
+  function restoreNodeIcon(button, id) {
+    const icon = button.querySelector(".gd-map-node-icon");
+    if (!icon) return;
+    icon.textContent = nodeDef(id)?.icon || "•";
+  }
+
+  function setExhaustedIcon(button) {
+    const icon = button.querySelector(".gd-map-node-icon");
+    if (!icon) return;
+    icon.textContent = "✓";
+  }
+
   function updateNodeEventRings() {
     document.querySelectorAll(".gd-map-node[data-node-id]").forEach(button => {
       const id = button.dataset.nodeId;
       const state = nodeState(id);
-      if (!state?.nonDarkLordEventsDisabled) return;
-      if (darkLordThreatCards(id).length) return;
-      button.classList.remove("event-node");
+      const exhausted = Boolean(state?.nonDarkLordEventsDisabled);
+      const hasDarkLordThreat = darkLordThreatCards(id).length > 0;
+
+      button.classList.toggle("exhausted-node", exhausted);
+      button.classList.toggle("dark-threat-node", hasDarkLordThreat);
+
+      if (!exhausted) {
+        delete button.dataset.normalEventsDisabled;
+        restoreNodeIcon(button, id);
+        return;
+      }
+
       button.dataset.normalEventsDisabled = "true";
+
+      if (hasDarkLordThreat) {
+        button.classList.add("event-node");
+        restoreNodeIcon(button, id);
+        return;
+      }
+
+      button.classList.remove("event-node");
+      setExhaustedIcon(button);
     });
   }
 
