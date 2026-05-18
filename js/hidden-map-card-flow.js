@@ -1,7 +1,5 @@
 // Hidden-map card flow prototype.
-// Default Explore stays as the original swipe/card screen, while the node map quietly
-// chooses the next location/card underneath. Visible map testing remains available with
-// ?mapExplore=1 or ?mapCalibrate=1.
+// The hidden map influences card selection/movement only; it does not replace the original Explore UI.
 (() => {
   const params = new URLSearchParams(window.location.search);
   const visibleMapMode = params.get("mapExplore") === "1" || params.get("mapCalibrate") === "1";
@@ -132,34 +130,6 @@
     if (cardId && !s.completedEventCardIds.includes(cardId)) s.completedEventCardIds.push(cardId);
   }
 
-  function renderCardOnlyExplore() {
-    const card = cards[game.currentCardId];
-    const region = game.regions[game.hero.regionId];
-    if (!card) return "";
-    const badge = card.badge ? `<div class="gd-card-badge">${card.badge}</div>` : "";
-    return `<div class="gd-main-scroll gd-card-first-explore">
-      <section class="gd-top single-right"><div></div><div style="justify-self:end">${timerRing(game.darkLordTimer, "dark", "Dark Lord")}</div></section>
-      <section class="gd-region-header"><div class="gd-region-line"><div class="gd-emblem">⌂</div><div><div class="gd-region-title">${region.name}</div><div class="gd-subtitle">${region.subtitle}</div></div></div><div class="gd-pill">◉ ${region.state}</div></section>
-      <section class="gd-card"><div class="gd-timer gd-card-timer">${game.heroTimer}s</div>${renderGhostLayer()}<div class="gd-card-art" style="background-image:url('${card.art}')"></div><div class="gd-card-body">${badge}<div class="gd-card-title">${card.title}</div><div class="gd-card-text">${card.text}</div>${game.lastAction ? renderActionResult() : ""}<div class="gd-choice-row">${renderChoice("left", card.choices.left)}<div class="gd-or">OR</div>${renderChoice("right", card.choices.right)}</div></div></section>
-      <div class="gd-result-toast">${game.result}</div>${renderHeroFooter()}
-    </div>`;
-  }
-
-  function installCardFirstRender() {
-    window.renderExplore = renderCardOnlyExplore;
-    try { renderExplore = window.renderExplore; } catch (_) {}
-
-    window.renderScreen = function renderScreen() {
-      if (game.activeTab === "darklord") return renderDarkLord();
-      if (game.activeTab === "hero") return renderHero();
-      if (game.activeTab === "party") return renderParty();
-      if (game.activeTab === "inventory") return renderInventory();
-      if (game.activeTab === "log") return renderLog();
-      return renderCardOnlyExplore();
-    };
-    try { renderScreen = window.renderScreen; } catch (_) {}
-  }
-
   function installChooseWrapper() {
     const baseChoose = window.choose || choose;
     if (!baseChoose || baseChoose.__hiddenMapWrapped) return false;
@@ -214,10 +184,7 @@
         if (!move.chain || CLEAR_NODE_AFTER_CARDS.has(move.cardId)) markNodeSpent(move.fromNodeId, move.cardId);
         game.hero.currentNodeId = move.toNodeId;
         game.hiddenMapPendingMove = null;
-        const nodeLabel = nodeDef(move.toNodeId)?.label || "the village";
-        if (cards?.[game.currentCardId]) game.result = `You move through ${nodeLabel}.`;
         syncPartyHeroSummary?.();
-        render();
       }
 
       return result;
@@ -237,7 +204,6 @@
 
     ensureNodeState?.();
     game.hero.currentNodeId = findNodeForCard(game.currentCardId) || currentNodeId();
-    installCardFirstRender();
     const chooseReady = installChooseWrapper();
     const ackReady = installAckWrapper();
     window[READY_FLAG] = chooseReady && ackReady;
@@ -245,7 +211,6 @@
     game.activeEncounter = null;
     game.pendingNodeMove = null;
     game.eventTransition = null;
-    render?.();
   }
 
   install();
