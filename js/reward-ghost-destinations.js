@@ -2,6 +2,7 @@
   const FLOAT_BEFORE_TAB_FLIGHT_MS = 1150;
   const STACK_GAP_PX = 18;
   const portalTimers = new WeakMap();
+  let lastDataBatchKey = "";
 
   const destinationForGhost = (ghost) => {
     const text = (ghost.textContent || "").toLowerCase();
@@ -19,6 +20,19 @@
     if (ghost.classList.contains("status")) return "hero";
     if (ghost.classList.contains("xp")) return "hero";
     if (ghost.classList.contains("noise")) return "log";
+    return "hero";
+  };
+
+  const destinationForData = (ghost) => {
+    const kind = ghost?.kind || "";
+    const className = ghost?.className || "";
+    const text = String(ghost?.text || "").toLowerCase();
+    if (className.includes("item") && (text.includes("route") || text.includes("tunnel") || text.includes("villager") || text.includes("added"))) return "explore";
+    if (kind === "item" || className.includes("item")) return "inventory";
+    if (kind === "gold" || kind === "food" || className.includes("gold") || className.includes("food")) return "inventory";
+    if (kind === "time" || className.includes("time")) return "timer";
+    if (kind === "damage" || kind === "heal" || className.includes("damage") || className.includes("heal")) return "hp";
+    if (kind === "noise" || className.includes("noise")) return "log";
     return "hero";
   };
 
@@ -69,6 +83,28 @@
     }, delay);
   };
 
+  const createPortalClone = ({ className, html, left, top, destination }) => {
+    const target = findDestinationTarget(destination);
+    const targetRect = target?.getBoundingClientRect();
+    const stackIndex = activeStackIndex(destination);
+    const point = targetPoint(destination, targetRect, stackIndex);
+    const clone = document.createElement("div");
+
+    clone.className = `${className || ""} gd-ghost-portal to-${destination}`.replace("gd-reward-ghost", "").trim();
+    clone.dataset.destination = destination;
+    clone.innerHTML = html;
+    clone.style.left = `${left}px`;
+    clone.style.top = `${top}px`;
+    clone.style.bottom = "auto";
+    clone.style.setProperty("--handoff-target-x", `${point.x}px`);
+    clone.style.setProperty("--handoff-target-y", `${point.y}px`);
+
+    document.body.appendChild(clone);
+    pulseTarget(destination, 1850);
+    clone.addEventListener("animationend", () => clone.remove(), { once: true });
+    return clone;
+  };
+
   const portalGhostNow = (ghost) => {
     if (!ghost || ghost.dataset.portalCloned) return;
     if (!ghost.isConnected) return;
@@ -80,26 +116,14 @@
     const destination = ghost.dataset.destination || destinationForGhost(ghost);
     ghost.dataset.destination = destination;
 
-    const target = findDestinationTarget(destination);
-    const targetRect = target?.getBoundingClientRect();
-    const clone = ghost.cloneNode(true);
-    const stackIndex = activeStackIndex(destination);
-    const point = targetPoint(destination, targetRect, stackIndex);
-
-    clone.className = ghost.className;
-    clone.classList.add("gd-ghost-portal", `to-${destination}`);
-    clone.classList.remove("gd-reward-ghost");
-    clone.dataset.destination = destination;
-    clone.style.left = `${rect.left + rect.width / 2}px`;
-    clone.style.top = `${rect.top}px`;
-    clone.style.bottom = "auto";
-    clone.style.setProperty("--handoff-target-x", `${point.x}px`);
-    clone.style.setProperty("--handoff-target-y", `${point.y}px`);
-
-    document.body.appendChild(clone);
+    createPortalClone({
+      className: ghost.className,
+      html: ghost.innerHTML,
+      left: rect.left + rect.width / 2,
+      top: rect.top,
+      destination,
+    });
     ghost.style.visibility = "hidden";
-    pulseTarget(destination, 1850);
-    clone.addEventListener("animationend", () => clone.remove(), { once: true });
   };
 
   const portalGhost = (ghost, delay = FLOAT_BEFORE_TAB_FLIGHT_MS) => {
@@ -120,6 +144,40 @@
         portalTimers.delete(ghost);
       }
       portalGhostNow(ghost);
+    });
+  };
+
+  window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData(ghosts = [], batchKey = "") {
+    if (!ghosts.length) return;
+    const key = batchKey || JSON.stringify(ghosts.map(g => [g.kind, g.text, g.className]));
+    if (key && key === lastDataBatchKey) return;
+    lastDataBatchKey = key;
+
+    const cardRect = document.querySelector(".gd-card")?.getBoundingClientRect();
+    const baseLeft = cardRect ? cardRect.left + cardRect.width / 2 : window.innerWidth / 2;
+    const baseTop = cardRect ? cardRect.top + cardRect.height * 0.56 : window.innerHeight * 0.45;
+    const spread = Math.min(52, Math.max(26, (cardRect?.width || 320) / 7));
+    const centerOffset = (ghosts.length - 1) / 2;
+
+    ghosts.forEach((ghost, index) => {
+      const destination = destinationForData(ghost);
+      const left = baseLeft + (index - centerOffset) * spread;
+      const top = baseTop + (index % 2) * 14;
+      const className = `gd-ghost-handoff ${ghost.className || ghost.kind || "status"}`;
+      const icon = ghost.icon || "✦";
+      const text = ghost.text || "Reward";
+      createPortalClone({
+        className,
+        html: `<span class="ghost-icon">${icon}</span><span class="ghost-text">${text}</span>`,
+        left,
+        top,
+        destination,
+      });
+    });
+
+    document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
+      ghost.dataset.portalCloned = "true";
+      ghost.style.visibility = "hidden";
     });
   };
 
