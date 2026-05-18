@@ -1,11 +1,12 @@
 /* Original Explore screen only: preserve the real event-card markup, pin the Goblin bar above nav, and keep card descriptions visible. */
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) {
   --gd-explore-footer-height: 50px;
+  --gd-explore-card-bottom-gap: 0px;
   position: relative !important;
   display: grid !important;
   grid-template-rows: auto auto minmax(0, 1fr) !important;
   gap: 0 !important;
-  padding-bottom: var(--gd-explore-footer-height) !important;
+  padding-bottom: calc(var(--gd-explore-footer-height) + var(--gd-explore-card-bottom-gap)) !important;
 }
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-result-toast {
@@ -14,9 +15,11 @@
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card {
   align-self: stretch !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  margin: 0 14px !important;
+  justify-self: stretch !important;
+  block-size: 100% !important;
+  inline-size: auto !important;
+  min-block-size: 0 !important;
+  margin: 0 14px var(--gd-explore-card-bottom-gap) !important;
   display: grid !important;
   grid-template-rows: minmax(176px, 38%) minmax(0, 1fr) !important;
   overflow: hidden !important;
