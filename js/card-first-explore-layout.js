@@ -5,7 +5,16 @@
   const visibleMapMode = params.get("mapExplore") === "1" || params.get("mapCalibrate") === "1";
   if (visibleMapMode) return;
 
+  let fitQueued = false;
+  let lateFitTimer = null;
+
   function px(value) { return `${Math.max(0, Math.round(value))}px`; }
+
+  function setImportant(el, prop, value) {
+    if (!el) return;
+    if (el.style.getPropertyValue(prop) === value && el.style.getPropertyPriority(prop) === "important") return;
+    el.style.setProperty(prop, value, "important");
+  }
 
   function markCardFirstExploreContainers() {
     document.querySelectorAll(".gd-main-scroll").forEach(screen => {
@@ -13,11 +22,14 @@
         screen.querySelector(":scope > .gd-card") &&
         screen.querySelector(":scope > .gd-footer-chip")
       );
-      if (isCardExplore) screen.classList.add("gd-card-first-explore");
+      if (isCardExplore && !screen.classList.contains("gd-card-first-explore")) {
+        screen.classList.add("gd-card-first-explore");
+      }
     });
   }
 
   function fitCardFirstExplore() {
+    fitQueued = false;
     markCardFirstExploreContainers();
 
     const screen = document.querySelector(".gd-card-first-explore");
@@ -26,46 +38,44 @@
     const phone = screen.closest(".gd-phone");
     const card = screen.querySelector(":scope > .gd-card");
     const footer = screen.querySelector(":scope > .gd-footer-chip");
-    const tabs = phone?.querySelector(":scope > .gd-tabs");
-    if (!phone || !card || !footer || !tabs) return;
+    if (!phone || !card || !footer) return;
 
-    const phoneRect = phone.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
-    const tabHeight = tabs.getBoundingClientRect().height || 64;
     const footerHeight = window.matchMedia("(max-height: 700px)").matches ? 46 : 50;
     const sideInset = 14;
 
-    phone.style.setProperty("position", "relative", "important");
-    screen.style.setProperty("position", "relative", "important");
-    screen.style.setProperty("height", "100%", "important");
-    screen.style.setProperty("min-height", "0", "important");
-    screen.style.setProperty("overflow", "hidden", "important");
-    screen.style.setProperty("padding-bottom", px(footerHeight), "important");
+    setImportant(phone, "position", "relative");
+    setImportant(screen, "position", "relative");
+    setImportant(screen, "height", "100%");
+    setImportant(screen, "min-height", "0");
+    setImportant(screen, "overflow", "hidden");
+    setImportant(screen, "padding-bottom", px(footerHeight));
 
-    footer.style.setProperty("position", "absolute", "important");
-    footer.style.setProperty("left", px(sideInset), "important");
-    footer.style.setProperty("right", px(sideInset), "important");
-    footer.style.setProperty("bottom", "0", "important");
-    footer.style.setProperty("height", px(footerHeight), "important");
-    footer.style.setProperty("margin", "0", "important");
-    footer.style.setProperty("z-index", "8", "important");
+    setImportant(footer, "position", "absolute");
+    setImportant(footer, "left", px(sideInset));
+    setImportant(footer, "right", px(sideInset));
+    setImportant(footer, "bottom", "0");
+    setImportant(footer, "height", px(footerHeight));
+    setImportant(footer, "margin", "0");
+    setImportant(footer, "z-index", "8");
 
     const footerTop = screen.getBoundingClientRect().bottom - footerHeight;
     const targetCardHeight = footerTop - cardRect.top;
     if (targetCardHeight > 260) {
-      card.style.setProperty("height", px(targetCardHeight), "important");
-      card.style.setProperty("min-height", px(targetCardHeight), "important");
-      card.style.setProperty("margin-bottom", "0", "important");
-      card.style.setProperty("overflow", "hidden", "important");
+      setImportant(card, "height", px(targetCardHeight));
+      setImportant(card, "min-height", px(targetCardHeight));
+      setImportant(card, "margin-bottom", "0");
+      setImportant(card, "overflow", "hidden");
     }
   }
 
   function scheduleFit() {
-    fitCardFirstExplore();
-    requestAnimationFrame(fitCardFirstExplore);
-    setTimeout(fitCardFirstExplore, 0);
-    setTimeout(fitCardFirstExplore, 80);
-    setTimeout(fitCardFirstExplore, 240);
+    if (!fitQueued) {
+      fitQueued = true;
+      requestAnimationFrame(fitCardFirstExplore);
+    }
+    clearTimeout(lateFitTimer);
+    lateFitTimer = setTimeout(() => requestAnimationFrame(fitCardFirstExplore), 120);
   }
 
   const baseRender = window.render || (typeof render !== "undefined" ? render : null);
@@ -84,7 +94,7 @@
   window.addEventListener("orientationchange", scheduleFit);
 
   const root = document.getElementById("app") || document.body;
-  new MutationObserver(scheduleFit).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+  new MutationObserver(scheduleFit).observe(root, { childList: true, subtree: true });
 
   scheduleFit();
 })();
