@@ -1,46 +1,31 @@
-/* Card-first Explore fit: keep the hero footer locked to the nav and let the event card fill down to it.
-   This intentionally targets both the explicit hidden-map renderer class and the plain Explore renderer,
-   because several prototype patches can wrap/replace renderExplore in different orders. */
-.gd-screen > .gd-main-scroll,
+/* Card-first Explore fit: the Goblin Outlaw bar is pinned above the nav,
+   and the event card fills only the reserved space above that bar. */
 .gd-main-scroll.gd-card-first-explore {
+  --gd-explore-footer-h: 50px;
+  position: relative !important;
   display: grid !important;
   height: 100% !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  grid-template-rows: auto minmax(0, 1fr) 50px !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
   gap: 0 !important;
-  padding-bottom: 0 !important;
+  padding-bottom: var(--gd-explore-footer-h) !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-top,
-.gd-card-first-explore > .gd-top {
-  grid-row: 1 !important;
-}
-
-.gd-screen > .gd-main-scroll > .gd-region-header,
-.gd-card-first-explore > .gd-region-header {
-  grid-row: 1 !important;
-  align-self: end !important;
-  margin-top: 40px !important;
-}
-
-.gd-screen > .gd-main-scroll > .gd-result-toast,
 .gd-card-first-explore > .gd-result-toast {
   display: none !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-card,
 .gd-card-first-explore > .gd-card {
-  grid-row: 2 !important;
   align-self: stretch !important;
   height: 100% !important;
   min-height: 0 !important;
   margin: 0 14px !important;
   display: grid !important;
   grid-template-rows: minmax(210px, 44%) minmax(0, 1fr) !important;
+  overflow: hidden !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-card .gd-card-art,
 .gd-card-first-explore > .gd-card .gd-card-art {
   height: auto !important;
   min-height: 210px !important;
@@ -48,71 +33,55 @@
   background-position: center !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-card .gd-card-body,
 .gd-card-first-explore > .gd-card .gd-card-body {
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   align-content: stretch !important;
+  overflow: hidden !important;
   padding-top: 34px !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-card .gd-card-text,
 .gd-card-first-explore > .gd-card .gd-card-text {
   flex: 0 1 auto !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-card .gd-action-result,
 .gd-card-first-explore > .gd-card .gd-action-result {
   margin-top: auto !important;
+  flex-shrink: 0 !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-card .gd-choice-row,
 .gd-card-first-explore > .gd-card .gd-choice-row {
   margin-top: auto !important;
   align-self: stretch !important;
+  flex-shrink: 0 !important;
 }
 
-.gd-screen > .gd-main-scroll > .gd-footer-chip,
-.gd-screen > .gd-main-scroll > .gd-footer-chip.slim,
 .gd-card-first-explore > .gd-footer-chip,
 .gd-card-first-explore > .gd-footer-chip.slim {
-  grid-row: 3 !important;
-  align-self: end !important;
-  margin: 0 14px !important;
-  height: 50px !important;
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 0 !important;
+  margin: 0 !important;
+  height: var(--gd-explore-footer-h) !important;
+  z-index: 5 !important;
 }
 
 @media (max-height: 700px) {
-  .gd-screen > .gd-main-scroll,
   .gd-main-scroll.gd-card-first-explore {
-    grid-template-rows: auto minmax(0, 1fr) 46px !important;
+    --gd-explore-footer-h: 46px;
   }
 
-  .gd-screen > .gd-main-scroll > .gd-region-header,
-  .gd-card-first-explore > .gd-region-header {
-    margin-top: 32px !important;
-  }
-
-  .gd-screen > .gd-main-scroll > .gd-card,
   .gd-card-first-explore > .gd-card {
     grid-template-rows: minmax(170px, 40%) minmax(0, 1fr) !important;
   }
 
-  .gd-screen > .gd-main-scroll > .gd-card .gd-card-art,
   .gd-card-first-explore > .gd-card .gd-card-art {
     min-height: 170px !important;
   }
 
-  .gd-screen > .gd-main-scroll > .gd-card .gd-card-body,
   .gd-card-first-explore > .gd-card .gd-card-body {
     padding-top: 26px !important;
-  }
-
-  .gd-screen > .gd-main-scroll > .gd-footer-chip,
-  .gd-screen > .gd-main-scroll > .gd-footer-chip.slim,
-  .gd-card-first-explore > .gd-footer-chip,
-  .gd-card-first-explore > .gd-footer-chip.slim {
-    height: 46px !important;
   }
 }
