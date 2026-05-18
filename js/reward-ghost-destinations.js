@@ -1,5 +1,5 @@
 (() => {
-  const FLOAT_BEFORE_TAB_FLIGHT_MS = 2000;
+  const FLOAT_BEFORE_TAB_FLIGHT_MS = 1150;
   const STACK_GAP_PX = 18;
 
   const destinationForGhost = (ghost) => {
@@ -96,7 +96,7 @@
 
       document.body.appendChild(clone);
       ghost.style.visibility = "hidden";
-      pulseTarget(destination, 2100);
+      pulseTarget(destination, 1850);
       clone.addEventListener("animationend", () => clone.remove(), { once: true });
     }, FLOAT_BEFORE_TAB_FLIGHT_MS);
   };
