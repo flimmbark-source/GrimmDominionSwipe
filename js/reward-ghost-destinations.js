@@ -1,6 +1,7 @@
 (() => {
   const FLOAT_BEFORE_TAB_FLIGHT_MS = 1150;
   const STACK_GAP_PX = 18;
+  const portalTimers = new WeakMap();
 
   const destinationForGhost = (ghost) => {
     const text = (ghost.textContent || "").toLowerCase();
@@ -68,37 +69,58 @@
     }, delay);
   };
 
-  const portalGhost = (ghost) => {
-    if (ghost.dataset.portalSet) return;
-    ghost.dataset.portalSet = "true";
-    const destination = destinationForGhost(ghost);
+  const portalGhostNow = (ghost) => {
+    if (!ghost || ghost.dataset.portalCloned) return;
+    if (!ghost.isConnected) return;
+
+    const rect = ghost.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return;
+
+    ghost.dataset.portalCloned = "true";
+    const destination = ghost.dataset.destination || destinationForGhost(ghost);
     ghost.dataset.destination = destination;
 
-    window.setTimeout(() => {
-      if (!ghost.isConnected) return;
-      const rect = ghost.getBoundingClientRect();
-      if (rect.width < 1 || rect.height < 1) return;
-      const target = findDestinationTarget(destination);
-      const targetRect = target?.getBoundingClientRect();
-      const clone = ghost.cloneNode(true);
-      const stackIndex = activeStackIndex(destination);
-      const point = targetPoint(destination, targetRect, stackIndex);
+    const target = findDestinationTarget(destination);
+    const targetRect = target?.getBoundingClientRect();
+    const clone = ghost.cloneNode(true);
+    const stackIndex = activeStackIndex(destination);
+    const point = targetPoint(destination, targetRect, stackIndex);
 
-      clone.className = ghost.className;
-      clone.classList.add("gd-ghost-portal", `to-${destination}`);
-      clone.classList.remove("gd-reward-ghost");
-      clone.dataset.destination = destination;
-      clone.style.left = `${rect.left + rect.width / 2}px`;
-      clone.style.top = `${rect.top}px`;
-      clone.style.bottom = "auto";
-      clone.style.setProperty("--handoff-target-x", `${point.x}px`);
-      clone.style.setProperty("--handoff-target-y", `${point.y}px`);
+    clone.className = ghost.className;
+    clone.classList.add("gd-ghost-portal", `to-${destination}`);
+    clone.classList.remove("gd-reward-ghost");
+    clone.dataset.destination = destination;
+    clone.style.left = `${rect.left + rect.width / 2}px`;
+    clone.style.top = `${rect.top}px`;
+    clone.style.bottom = "auto";
+    clone.style.setProperty("--handoff-target-x", `${point.x}px`);
+    clone.style.setProperty("--handoff-target-y", `${point.y}px`);
 
-      document.body.appendChild(clone);
-      ghost.style.visibility = "hidden";
-      pulseTarget(destination, 1850);
-      clone.addEventListener("animationend", () => clone.remove(), { once: true });
-    }, FLOAT_BEFORE_TAB_FLIGHT_MS);
+    document.body.appendChild(clone);
+    ghost.style.visibility = "hidden";
+    pulseTarget(destination, 1850);
+    clone.addEventListener("animationend", () => clone.remove(), { once: true });
+  };
+
+  const portalGhost = (ghost, delay = FLOAT_BEFORE_TAB_FLIGHT_MS) => {
+    if (!ghost || ghost.dataset.portalCloned || portalTimers.has(ghost)) return;
+    ghost.dataset.destination = destinationForGhost(ghost);
+    const timer = window.setTimeout(() => {
+      portalTimers.delete(ghost);
+      portalGhostNow(ghost);
+    }, delay);
+    portalTimers.set(ghost, timer);
+  };
+
+  window.handoffRewardGhostsNow = function handoffRewardGhostsNow() {
+    document.querySelectorAll(".gd-reward-ghost").forEach(ghost => {
+      const timer = portalTimers.get(ghost);
+      if (timer) {
+        clearTimeout(timer);
+        portalTimers.delete(ghost);
+      }
+      portalGhostNow(ghost);
+    });
   };
 
   const observer = new MutationObserver((mutations) => {
