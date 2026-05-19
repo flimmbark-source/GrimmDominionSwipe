@@ -27,6 +27,115 @@
     },
   };
 
+  // First-pass route grammar. This gives the card deck a readable village journey
+  // without requiring the visible map: approach/threshold -> interior -> exit -> landmark,
+  // with complications looping back into an exit card.
+  const FLOW_STEPS = {
+    village_house_window: {
+      routeId: "house_route",
+      role: "threshold",
+      nodeId: "sleeping_cottage_01",
+      place: "Sleeping Cottage",
+      beat: "Window",
+      next: {
+        left: { success: "inside_sleeping_house", great: "inside_sleeping_house", failure: "angry_villager" },
+        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+      },
+    },
+    inside_sleeping_house: {
+      routeId: "house_route",
+      role: "interior",
+      nodeId: "sleeping_cottage_01",
+      place: "Inside Cottage",
+      beat: "Room",
+      next: {
+        left: { success: "quiet_alley", great: "quiet_alley", failure: "angry_villager" },
+        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+      },
+    },
+    quiet_alley: {
+      routeId: "house_route",
+      role: "exit",
+      nodeId: "back_lane_01",
+      place: "Back Lane",
+      beat: "Exit",
+      next: {
+        left: { success: "market_stall", great: "market_stall", failure: "scout_sniffs_path" },
+        right: { success: "market_stall", great: "market_stall", failure: "scout_sniffs_path" },
+      },
+    },
+    market_stall: {
+      routeId: "market_route",
+      role: "landmark",
+      nodeId: "moonlit_market_01",
+      place: "Moonlit Market",
+      beat: "Stall",
+      next: {
+        left: { success: "well_bucket", great: "old_rooftops", failure: "angry_villager" },
+        right: { success: "well_bucket", great: "old_rooftops", failure: "scout_sniffs_path" },
+      },
+    },
+    locked_cottage: {
+      routeId: "house_route",
+      role: "threshold",
+      nodeId: "sleeping_cottage_02",
+      place: "Locked Cottage",
+      beat: "Door",
+      next: {
+        left: { success: "inside_sleeping_house", great: "inside_sleeping_house", failure: "angry_villager" },
+        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+      },
+    },
+    angry_villager: {
+      routeId: "house_route",
+      role: "complication",
+      nodeId: "cottage_row_01",
+      place: "Cottage Row",
+      beat: "Alarm",
+      next: {
+        left: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+      },
+    },
+    scout_sniffs_path: {
+      routeId: "house_route",
+      role: "complication",
+      nodeId: "old_road_01",
+      place: "Old Road",
+      beat: "Patrol",
+      next: {
+        left: { success: "quiet_alley", great: "quiet_alley", failure: "angry_villager" },
+        right: { success: "quiet_alley", great: "quiet_alley", failure: "angry_villager" },
+      },
+    },
+    old_rooftops: {
+      routeId: "market_route",
+      role: "exit",
+      nodeId: "market_back_01",
+      place: "Rooftops",
+      beat: "High Path",
+      next: {
+        left: { success: "well_bucket", great: "well_bucket", failure: "scout_sniffs_path" },
+        right: { success: "well_bucket", great: "well_bucket", failure: "scout_sniffs_path" },
+      },
+    },
+    well_bucket: {
+      routeId: "well_route",
+      role: "landmark",
+      nodeId: "old_stone_well_01",
+      place: "Old Stone Well",
+      beat: "Well",
+    },
+  };
+
+  const ROLE_LABELS = {
+    threshold: "Threshold",
+    interior: "Interior",
+    exit: "Exit",
+    landmark: "Landmark",
+    complication: "Complication",
+  };
+
   function map() { return window.VILLAGE_NODE_MAP; }
   function nodes() { return map()?.nodes || {}; }
   function nodeDef(id) { return nodes()[id] || null; }
@@ -39,6 +148,49 @@
   function state(id) { return game?.mapState?.village?.nodes?.[id] || null; }
   function valid(ids) { return [...new Set((ids || []).filter(id => id && cards?.[id]))]; }
   function pick(ids) { const pool = valid(ids); return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; }
+
+  function flowStep(cardId) { return FLOW_STEPS[cardId] || null; }
+  function flowNodeForCard(cardId, fallbackNodeId = currentNodeId()) {
+    return flowStep(cardId)?.nodeId && nodeDef(flowStep(cardId).nodeId) ? flowStep(cardId).nodeId : fallbackNodeId;
+  }
+
+  function ensureFlowState() {
+    game.villageCardFlow ||= {
+      routeId: "house_route",
+      trail: ["Forest Edge"],
+      role: "Approach",
+      beat: "Approach",
+    };
+    game.villageCardFlow.trail ||= ["Forest Edge"];
+  }
+
+  function rememberFlowCard(cardId, nodeId = null) {
+    ensureFlowState();
+    const step = flowStep(cardId);
+    const node = nodeDef(nodeId || step?.nodeId || currentNodeId());
+    const place = step?.place || node?.label || "Village";
+    const trail = game.villageCardFlow.trail || [];
+    if (trail[trail.length - 1] !== place) trail.push(place);
+    game.villageCardFlow.trail = trail.slice(-4);
+    game.villageCardFlow.routeId = step?.routeId || game.villageCardFlow.routeId || "village_route";
+    game.villageCardFlow.role = ROLE_LABELS[step?.role] || "Village";
+    game.villageCardFlow.beat = step?.beat || cards?.[cardId]?.title || "Event";
+  }
+
+  function chooseFlowNextCard(cardId, side, outcomeType) {
+    const step = flowStep(cardId);
+    const outcomeMap = step?.next?.[side] || step?.next?.any;
+    const nextCardId = outcomeMap?.[outcomeType] || outcomeMap?.default;
+    return cards?.[nextCardId] ? nextCardId : null;
+  }
+
+  function renderFlowBreadcrumb() {
+    ensureFlowState();
+    const flow = game.villageCardFlow;
+    const trail = (flow.trail || ["Village"]).slice(-3);
+    const crumbs = trail.map(label => `<span>${label}</span>`).join(`<i>›</i>`);
+    return `<section class="gd-route-breadcrumb"><div class="gd-route-crumbs">${crumbs}</div><div class="gd-route-role"><b>${flow.role || "Village"}</b><small>${flow.beat || "Event"}</small></div></section>`;
+  }
 
   function threatCards(id) {
     const s = state(id);
@@ -64,6 +216,8 @@
   }
 
   function findNodeForCard(cardId) {
+    const flowNode = flowNodeForCard(cardId, null);
+    if (flowNode && nodeDef(flowNode)) return flowNode;
     const matching = Object.keys(nodes()).filter(id => nodeMatchesCard(id, cardId));
     return matching.find(id => !PASS_THROUGH.test(nodeDef(id)?.locationType || "")) || matching[0] || currentNodeId();
   }
@@ -130,6 +284,21 @@
     if (cardId && !s.completedEventCardIds.includes(cardId)) s.completedEventCardIds.push(cardId);
   }
 
+  function installRenderExploreWrapper() {
+    const baseRenderExplore = window.renderExplore || renderExplore;
+    if (!baseRenderExplore || baseRenderExplore.__villageFlowWrapped) return false;
+    const wrapped = function renderExploreWithVillageFlow(...args) {
+      rememberFlowCard(game.currentCardId, game.hero?.currentNodeId);
+      const html = baseRenderExplore.apply(this, args);
+      if (html.includes("gd-route-breadcrumb")) return html;
+      return html.replace(`<section class="gd-region-header">`, `${renderFlowBreadcrumb()}<section class="gd-region-header">`);
+    };
+    wrapped.__villageFlowWrapped = true;
+    window.renderExplore = wrapped;
+    try { renderExplore = wrapped; } catch (_) {}
+    return true;
+  }
+
   function installChooseWrapper() {
     const baseChoose = window.choose || choose;
     if (!baseChoose || baseChoose.__hiddenMapWrapped) return false;
@@ -146,6 +315,15 @@
       const outcomeType = game.lastAction?.outcomeType;
       if (!outcomeType || !choiceData) return;
 
+      const flowNextCardId = chooseFlowNextCard(cardId, side, outcomeType);
+      if (flowNextCardId && cards[flowNextCardId]) {
+        const nextNodeId = flowNodeForCard(flowNextCardId, chooseNextNode(nodeId, choiceData, outcomeType));
+        game.pendingNextCardId = flowNextCardId;
+        game.hiddenMapPendingMove = { fromNodeId: nodeId, toNodeId: nextNodeId, cardId, nextCardId: flowNextCardId, chain: false, flow: true };
+        game.log.unshift(`Village flow: ${cards[cardId]?.title || "Event"} → ${cards[flowNextCardId].title}.`);
+        return;
+      }
+
       const explicitChain = PASS_ONE_CHAINS[cardId]?.[side]?.[outcomeType] || null;
       const builtInChain = cards?.[game.pendingNextCardId] && nodeMatchesCard(nodeId, game.pendingNextCardId)
         ? game.pendingNextCardId
@@ -154,7 +332,7 @@
 
       if (chainCardId && cards[chainCardId]) {
         game.pendingNextCardId = chainCardId;
-        game.hiddenMapPendingMove = { fromNodeId: nodeId, toNodeId: nodeId, cardId, nextCardId: chainCardId, chain: true };
+        game.hiddenMapPendingMove = { fromNodeId: nodeId, toNodeId: flowNodeForCard(chainCardId, nodeId), cardId, nextCardId: chainCardId, chain: true };
         game.log.unshift(`Hidden map: ${nodeDef(nodeId)?.label || "Node"} continues to ${cards[chainCardId].title}.`);
         return;
       }
@@ -162,7 +340,7 @@
       const nextNodeId = chooseNextNode(nodeId, choiceData, outcomeType);
       const nextCardId = drawCardForHiddenNode(nextNodeId) || drawNextCardId();
       game.pendingNextCardId = nextCardId;
-      game.hiddenMapPendingMove = { fromNodeId: nodeId, toNodeId: nextNodeId, cardId, nextCardId, chain: false };
+      game.hiddenMapPendingMove = { fromNodeId: nodeId, toNodeId: flowNodeForCard(nextCardId, nextNodeId), cardId, nextCardId, chain: false };
       game.log.unshift(`Hidden map: ${nodeDef(nodeId)?.label || "Node"} → ${nodeDef(nextNodeId)?.label || "Node"}.`);
     };
 
@@ -178,11 +356,14 @@
 
     const wrapped = function acknowledgeHiddenMapResult(...args) {
       const move = game.hiddenMapPendingMove;
+      if (move) {
+        game.hero.currentNodeId = move.toNodeId;
+        rememberFlowCard(move.nextCardId, move.toNodeId);
+      }
       const result = baseAck.apply(this, args);
 
       if (move && !game.awaitingResultAck) {
         if (!move.chain || CLEAR_NODE_AFTER_CARDS.has(move.cardId)) markNodeSpent(move.fromNodeId, move.cardId);
-        game.hero.currentNodeId = move.toNodeId;
         game.hiddenMapPendingMove = null;
         syncPartyHeroSummary?.();
       }
@@ -203,14 +384,18 @@
     }
 
     ensureNodeState?.();
+    ensureFlowState();
     game.hero.currentNodeId = findNodeForCard(game.currentCardId) || currentNodeId();
+    rememberFlowCard(game.currentCardId, game.hero.currentNodeId);
+    const renderReady = installRenderExploreWrapper();
     const chooseReady = installChooseWrapper();
     const ackReady = installAckWrapper();
-    window[READY_FLAG] = chooseReady && ackReady;
+    window[READY_FLAG] = renderReady && chooseReady && ackReady;
     game.hiddenMapMode = true;
     game.activeEncounter = null;
     game.pendingNodeMove = null;
     game.eventTransition = null;
+    render?.();
   }
 
   install();
