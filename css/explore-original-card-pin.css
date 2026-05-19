@@ -4,9 +4,14 @@
   --gd-explore-card-bottom-gap: 0px;
   position: relative !important;
   display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  /* top timer / route breadcrumb / region header / flexible card area */
+  grid-template-rows: auto auto auto minmax(0, 1fr) !important;
   gap: 0 !important;
   padding-bottom: calc(var(--gd-explore-footer-height) + var(--gd-explore-card-bottom-gap)) !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip):not(:has(> .gd-route-breadcrumb)) {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
 }
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-result-toast {
@@ -39,10 +44,9 @@
 }
 
 .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-card-text {
-  display: -webkit-box !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-line-clamp: 3 !important;
-  overflow: hidden !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
   flex: 0 1 auto !important;
 }
 
@@ -77,12 +81,6 @@
   }
 
   .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card {
-    grid-template-rows: minmax(150px, 34%) minmax(0, 1fr) !important;
-  }
-
-  .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-card-text {
-    display: -webkit-box !important;
-    -webkit-box-orient: vertical !important;
-    -webkit-line-clamp: 2 !important;
+    grid-template-rows: minmax(130px, 30%) minmax(0, 1fr) !important;
   }
 }
