@@ -1,5 +1,5 @@
 // Original Explore layout helper: make the event card's bottom edge sit directly above the Goblin bar.
-// The art/body divider and player timer move upward when card text needs more room.
+// The art/body divider is calculated once per card/height so the full description has room above the choices.
 (() => {
   const params = new URLSearchParams(window.location.search);
   const visibleMapMode = params.get("mapExplore") === "1" || params.get("mapCalibrate") === "1";
@@ -10,6 +10,7 @@
   window[READY_FLAG] = true;
 
   let queued = false;
+  const layoutCache = new Map();
 
   function setImportant(el, prop, value) {
     if (!el) return;
@@ -25,40 +26,88 @@
     return el?.getBoundingClientRect?.().height || 0;
   }
 
-  function computeBodyNeed(card, targetHeight) {
+  function stablePreferredArtHeight(targetHeight) {
+    if (targetHeight < 430) return 118;
+    if (targetHeight < 500) return 132;
+    if (targetHeight < 570) return 150;
+    if (targetHeight < 650) return 168;
+    return 186;
+  }
+
+  function minimumArtHeight(targetHeight) {
+    if (targetHeight < 430) return 74;
+    if (targetHeight < 500) return 88;
+    return 104;
+  }
+
+  function layoutKey(card, targetHeight) {
+    const title = card.querySelector(".gd-card-title")?.textContent || "";
+    const text = card.querySelector(".gd-card-text")?.textContent || "";
+    const heightBucket = Math.round(targetHeight / 4) * 4;
+    return `${game?.currentCardId || title}|${heightBucket}|${title.length}|${text.length}`;
+  }
+
+  function prepareTextForMeasurement(text, targetHeight) {
+    if (!text) return;
+    setImportant(text, "display", "block");
+    setImportant(text, "-webkit-line-clamp", "unset");
+    setImportant(text, "overflow", "visible");
+    setImportant(text, "max-height", "none");
+    setImportant(text, "line-height", targetHeight < 500 ? "1.22" : "1.3");
+    setImportant(text, "font-size", targetHeight < 500 ? "13px" : "14px");
+    setImportant(text, "margin-bottom", "0px");
+    setImportant(text, "flex", "0 0 auto");
+  }
+
+  function computeStableLayout(card, targetHeight) {
+    const key = layoutKey(card, targetHeight);
+    const cached = layoutCache.get(key);
+    if (cached) return cached;
+
     const body = card.querySelector(".gd-card-body");
     const badge = card.querySelector(".gd-card-badge");
     const title = card.querySelector(".gd-card-title");
     const text = card.querySelector(".gd-card-text");
     const choices = card.querySelector(".gd-choice-row");
-    const result = card.querySelector(".gd-action-result");
-    const activeFooter = result || choices;
+    const activeFooter = choices || card.querySelector(".gd-action-result");
 
-    if (text) {
-      setImportant(text, "display", "block");
-      setImportant(text, "-webkit-line-clamp", "unset");
-      setImportant(text, "overflow", "visible");
-      setImportant(text, "margin-bottom", "0");
+    const paddingTop = targetHeight < 500 ? 16 : 20;
+    const paddingBottom = 10;
+    const badgeGap = badge ? 6 : 0;
+    const titleGap = targetHeight < 500 ? 8 : 10;
+    const textToChoicesBuffer = targetHeight < 500 ? 14 : 20;
+    const preferredArtHeight = stablePreferredArtHeight(targetHeight);
+    const minArtHeight = minimumArtHeight(targetHeight);
+
+    if (body) {
+      setImportant(body, "display", "flex");
+      setImportant(body, "flex-direction", "column");
+      setImportant(body, "padding-top", px(paddingTop));
+      setImportant(body, "padding-bottom", px(paddingBottom));
+      setImportant(body, "overflow", "hidden");
     }
 
-    const bodyStyle = body ? getComputedStyle(body) : null;
-    const paddingTop = bodyStyle ? parseFloat(bodyStyle.paddingTop) || 0 : 28;
-    const paddingBottom = bodyStyle ? parseFloat(bodyStyle.paddingBottom) || 0 : 18;
-    const titleGap = 12;
-    const textToChoicesBuffer = targetHeight < 520 ? 16 : 24;
-    const safeTextHeight = Math.min(text?.scrollHeight || rectHeight(text), targetHeight * 0.24);
+    if (title) setImportant(title, "margin-bottom", "0px");
+    prepareTextForMeasurement(text, targetHeight);
 
-    const need = paddingTop
+    const fullTextHeight = text?.scrollHeight || rectHeight(text);
+    const footerHeight = rectHeight(activeFooter);
+    const bodyNeed = paddingTop
       + rectHeight(badge)
-      + (badge ? 6 : 0)
+      + badgeGap
       + rectHeight(title)
       + titleGap
-      + safeTextHeight
+      + fullTextHeight
       + textToChoicesBuffer
-      + rectHeight(activeFooter)
+      + footerHeight
       + paddingBottom;
 
-    return { need, textToChoicesBuffer };
+    const rawArtHeight = targetHeight - bodyNeed;
+    const artHeight = Math.max(minArtHeight, Math.min(preferredArtHeight, rawArtHeight));
+    const bodyHeight = Math.max(0, targetHeight - artHeight);
+    const layout = { artHeight, bodyHeight, textToChoicesBuffer, paddingTop, paddingBottom };
+    layoutCache.set(key, layout);
+    return layout;
   }
 
   function fitExploreCardToFooter() {
@@ -72,24 +121,22 @@
     const body = card.querySelector(".gd-card-body");
     const art = card.querySelector(".gd-card-art");
     const timer = card.querySelector(".gd-card-timer");
+    const title = card.querySelector(".gd-card-title");
+    const text = card.querySelector(".gd-card-text");
     const choices = card.querySelector(".gd-choice-row");
     const result = card.querySelector(".gd-action-result");
-    const text = card.querySelector(".gd-card-text");
 
     const cardTop = card.getBoundingClientRect().top;
     const footerTop = footer.getBoundingClientRect().top;
-    const targetHeight = footerTop - cardTop;
+    const targetHeight = Math.round(footerTop - cardTop);
     if (targetHeight < 280) return;
 
-    const { need: bodyNeed, textToChoicesBuffer } = computeBodyNeed(card, targetHeight);
-    const minArt = targetHeight < 500 ? 118 : 138;
-    const maxArt = Math.min(targetHeight * 0.48, targetHeight - 230);
-    const rawArtHeight = targetHeight - bodyNeed;
-    const artHeight = Math.max(minArt, Math.min(maxArt, rawArtHeight));
+    const { artHeight, bodyHeight, textToChoicesBuffer, paddingTop, paddingBottom } = computeStableLayout(card, targetHeight);
     const timerHeight = timer?.getBoundingClientRect?.().height || 76;
 
     setImportant(card, "height", px(targetHeight));
     setImportant(card, "min-height", px(targetHeight));
+    setImportant(card, "max-height", px(targetHeight));
     setImportant(card, "display", "grid");
     setImportant(card, "grid-template-rows", `${px(artHeight)} minmax(0, 1fr)`);
     setImportant(card, "overflow", "hidden");
@@ -107,20 +154,24 @@
     }
 
     if (body) {
+      setImportant(body, "height", px(bodyHeight));
+      setImportant(body, "min-height", "0");
       setImportant(body, "display", "flex");
       setImportant(body, "flex-direction", "column");
-      setImportant(body, "min-height", "0");
+      setImportant(body, "padding-top", px(paddingTop));
+      setImportant(body, "padding-bottom", px(paddingBottom));
       setImportant(body, "overflow", "hidden");
-      setImportant(body, "padding-top", targetHeight < 500 ? "18px" : "22px");
-      setImportant(body, "padding-bottom", "10px");
+    }
+
+    if (title) {
+      setImportant(title, "margin-bottom", targetHeight < 500 ? "8px" : "10px");
+      setImportant(title, "flex-shrink", "0");
     }
 
     if (text) {
-      setImportant(text, "display", "block");
-      setImportant(text, "-webkit-line-clamp", "unset");
-      setImportant(text, "overflow", "visible");
+      prepareTextForMeasurement(text, targetHeight);
       setImportant(text, "margin-bottom", px(textToChoicesBuffer));
-      setImportant(text, "flex", "0 1 auto");
+      setImportant(text, "flex-shrink", "0");
     }
 
     if (choices) {
@@ -134,20 +185,17 @@
     }
   }
 
-  function scheduleFit() {
-    if (queued) return;
+  function scheduleFit(force = false) {
+    if (queued && !force) return;
     queued = true;
-    requestAnimationFrame(() => {
-      fitExploreCardToFooter();
-      setTimeout(fitExploreCardToFooter, 80);
-    });
+    requestAnimationFrame(fitExploreCardToFooter);
   }
 
   const baseRender = window.render || (typeof render !== "undefined" ? render : null);
   if (baseRender && !baseRender.__exploreCardToFooterFitWrapped) {
     const wrapped = function renderWithExploreCardToFooterFit(...args) {
       const out = baseRender.apply(this, args);
-      scheduleFit();
+      scheduleFit(true);
       return out;
     };
     wrapped.__exploreCardToFooterFitWrapped = true;
@@ -155,8 +203,13 @@
     try { render = wrapped; } catch (_) {}
   }
 
-  window.addEventListener("resize", scheduleFit);
-  window.addEventListener("orientationchange", scheduleFit);
-  new MutationObserver(scheduleFit).observe(document.getElementById("app") || document.body, { childList: true, subtree: true });
-  scheduleFit();
+  window.addEventListener("resize", () => {
+    layoutCache.clear();
+    scheduleFit(true);
+  });
+  window.addEventListener("orientationchange", () => {
+    layoutCache.clear();
+    scheduleFit(true);
+  });
+  scheduleFit(true);
 })();
