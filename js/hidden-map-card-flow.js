@@ -1,5 +1,5 @@
 // Hidden-map card flow prototype.
-// The hidden map influences card selection/movement only; it does not replace the original Explore UI.
+// The encounter flow authors the village run; the hidden node map supplies location context underneath.
 (() => {
   const params = new URLSearchParams(window.location.search);
   const visibleMapMode = params.get("mapExplore") === "1" || params.get("mapCalibrate") === "1";
@@ -8,6 +8,7 @@
   const READY_FLAG = "HIDDEN_MAP_CARD_FLOW";
   if (window[READY_FLAG]) return;
 
+  const START_CARD_ID = "village_outskirts";
   const PASS_THROUGH = /road|path|trail|gate|lane|crossing|turn|forest|stream|hedge/;
   const CLEAR_NODE_AFTER_CARDS = new Set([
     "inside_sleeping_house",
@@ -15,125 +16,263 @@
     "drain_crawl",
   ]);
 
-  const PASS_ONE_CHAINS = {
-    village_house_window: {
-      left: { success: "inside_sleeping_house", great: "inside_sleeping_house" },
-    },
-    baker_backdoor: {
-      left: { success: "hidden_pantry", great: "hidden_pantry" },
-    },
-    sewer_grate: {
-      left: { success: "drain_crawl", great: "drain_crawl" },
-    },
-  };
+  function addEncounterCards() {
+    cards.village_outskirts ||= {
+      id: "village_outskirts",
+      title: "Village Outskirts",
+      badge: "Encounter Entry",
+      art: ART.scout,
+      text: "The village lies ahead under shuttered windows and crooked moonlight. Smoke crawls from chimneys. Somewhere inside, food, coin, and danger wait.",
+      choices: {
+        left: choice("Take the ditch line", "stealth", 2, 2, {
+          failure: result("A loose stone clicks down the ditch. Something ahead stops breathing.", [noise()]),
+          success: result("You crawl low through nettles and reach the old road unseen.", [status("Hidden"), xp("Clean Entry")]),
+          great: result("You find a hedge gap that skips the open road entirely.", [status("Hidden"), time(1), xp("Hedge Gap")]),
+        }, ["stealth", "entry", "route"]),
+        right: choice("Watch the patrol lamps", "spirit", 2, 2, {
+          failure: result("You misread the lamps. A Scout turns its nose toward you.", [noise()]),
+          success: result("The lamp pattern reveals a safe moment to cross.", [xp("Patrol Rhythm")]),
+          great: result("You catch the village rhythm perfectly and slip toward the cottages.", [time(2), status("Hidden")]),
+        }, ["patrol", "entry", "route"]),
+      },
+    };
 
-  // First-pass route grammar. This gives the card deck a readable village journey
-  // without requiring the visible map: approach/threshold -> interior -> exit -> landmark,
-  // with complications looping back into an exit card.
+    cards.old_road_entry ||= {
+      id: "old_road_entry",
+      title: "Old Road into the Village",
+      badge: "Approach",
+      art: ART.scout,
+      text: "Cart ruts cut through the mud toward the first cottages. The road is open, but fences and hedges offer broken cover.",
+      choices: {
+        left: choice("Slip along the hedges", "stealth", 3, 3, {
+          failure: result("A sleeping bird bursts from the hedge and gives you away.", [noise()]),
+          success: result("You move from hedge to hedge until the cottages crowd around you.", [status("Hidden"), xp("Hedge Walker")]),
+          great: result("A hidden side lane carries you past the worst of the road.", [status("Hidden"), time(2), xp("Side Lane")]),
+        }, ["stealth", "road", "route"]),
+        right: choice("Read the muddy tracks", "survival", 3, 3, {
+          failure: result("You follow the freshest tracks straight toward trouble.", [noise()]),
+          success: result("The tracks show which doors are still asleep.", [xp("Village Tracks")]),
+          great: result("You find a quiet cottage with a crooked lock and no dog prints.", [time(1), xp("Soft Target")]),
+        }, ["survival", "road", "house"]),
+      },
+    };
+
+    cards.cottage_row_entry ||= {
+      id: "cottage_row_entry",
+      title: "Cottage Row",
+      badge: "Infiltration Choice",
+      art: ART.scout,
+      text: "Low cottages lean over the lane. One warm window glows. One crooked door hangs loose. Somewhere a kettle ticks itself cold.",
+      choices: {
+        left: choice("Try the warm window", "stealth", 3, 3, {
+          failure: result("A curtain twitches before you even touch the sill.", [noise()]),
+          success: result("The window sits low enough for a small thief.", [xp("Chosen Window")]),
+          great: result("You spot the sleeping pattern inside before touching the latch.", [status("Hidden"), time(1)]),
+        }, ["stealth", "house", "entry"]),
+        right: choice("Try the crooked door", "cunning", 3, 3, {
+          failure: result("The door hinge squeals into the lane.", [noise()]),
+          success: result("The crooked door has an old lock and a weak frame.", [xp("Weak Door")]),
+          great: result("You find the cottage key tucked beneath a loose stone.", [item("House Key"), time(1)]),
+        }, ["cunning", "house", "lock"]),
+      },
+    };
+
+    cards.market_back_exit ||= {
+      id: "market_back_exit",
+      title: "Market Back Exit",
+      badge: "Encounter Exit",
+      art: ART.scout,
+      text: "Behind the market, barrels and hanging tarps make a crooked path out of sight. You can vanish with what you have, or mark the way for another run.",
+      choices: {
+        left: choice("Fade into the alleys", "stealth", 2, 2, {
+          failure: result("A bottle rolls under your foot as you leave. The village wakes behind you.", [noise()]),
+          success: result("You melt into the alleys with your haul intact.", [status("Hidden"), xp("Clean Exit")]),
+          great: result("You leave no trail and gain a perfect line back in.", [status("Hidden"), time(2), xp("Clean Exit")]),
+        }, ["stealth", "exit", "route"]),
+        right: choice("Mark the return path", "cunning", 2, 2, {
+          failure: result("Your mark is too obvious. Someone will notice it soon.", [noise()]),
+          success: result("You scratch a subtle sign into the barrel hoop.", [xp("Marked Route")]),
+          great: result("You leave a hidden mark only the party will read.", [xp("Marked Route"), time(1), status("Hidden")]),
+        }, ["cunning", "exit", "mark"]),
+      },
+    };
+
+    ["village_outskirts", "old_road_entry", "cottage_row_entry", "market_back_exit"].forEach(id => {
+      if (!villageStartingDeck.includes(id)) villageStartingDeck.push(id);
+      const deck = game?.regions?.village?.deck;
+      if (deck && !deck.includes(id)) deck.push(id);
+    });
+  }
+
   const FLOW_STEPS = {
+    village_outskirts: {
+      encounterId: "village_infiltration",
+      role: "entry",
+      nodeId: "forest_edge_01",
+      place: "Forest Edge",
+      beat: "Village Edge",
+      next: {
+        left: { success: "old_road_entry", great: "cottage_row_entry", failure: "scout_sniffs_path" },
+        right: { success: "old_road_entry", great: "cottage_row_entry", failure: "scout_sniffs_path" },
+      },
+    },
+    old_road_entry: {
+      encounterId: "village_infiltration",
+      role: "approach",
+      nodeId: "old_road_01",
+      place: "Old Road",
+      beat: "Approach",
+      next: {
+        left: { success: "cottage_row_entry", great: "quiet_alley", failure: "scout_sniffs_path" },
+        right: { success: "cottage_row_entry", great: "locked_cottage", failure: "angry_villager" },
+      },
+    },
+    cottage_row_entry: {
+      encounterId: "village_infiltration",
+      role: "choice",
+      nodeId: "cottage_row_01",
+      place: "Cottage Row",
+      beat: "Choose a Door",
+      next: {
+        left: { success: "village_house_window", great: "village_house_window", failure: "angry_villager" },
+        right: { success: "locked_cottage", great: "locked_cottage", failure: "scout_sniffs_path" },
+      },
+    },
     village_house_window: {
-      routeId: "house_route",
+      encounterId: "village_infiltration",
       role: "threshold",
       nodeId: "sleeping_cottage_01",
       place: "Sleeping Cottage",
       beat: "Window",
       next: {
         left: { success: "inside_sleeping_house", great: "inside_sleeping_house", failure: "angry_villager" },
-        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+        right: { success: "quiet_alley", great: "old_rooftops", failure: "scout_sniffs_path" },
+      },
+    },
+    locked_cottage: {
+      encounterId: "village_infiltration",
+      role: "threshold",
+      nodeId: "sleeping_cottage_02",
+      place: "Locked Cottage",
+      beat: "Crooked Door",
+      next: {
+        left: { success: "inside_sleeping_house", great: "inside_sleeping_house", failure: "angry_villager" },
+        right: { success: "quiet_alley", great: "cellar_route", failure: "scout_sniffs_path" },
       },
     },
     inside_sleeping_house: {
-      routeId: "house_route",
+      encounterId: "village_infiltration",
       role: "interior",
       nodeId: "sleeping_cottage_01",
       place: "Inside Cottage",
       beat: "Room",
       next: {
         left: { success: "quiet_alley", great: "quiet_alley", failure: "angry_villager" },
-        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
-      },
-    },
-    quiet_alley: {
-      routeId: "house_route",
-      role: "exit",
-      nodeId: "back_lane_01",
-      place: "Back Lane",
-      beat: "Exit",
-      next: {
-        left: { success: "market_stall", great: "market_stall", failure: "scout_sniffs_path" },
-        right: { success: "market_stall", great: "market_stall", failure: "scout_sniffs_path" },
-      },
-    },
-    market_stall: {
-      routeId: "market_route",
-      role: "landmark",
-      nodeId: "moonlit_market_01",
-      place: "Moonlit Market",
-      beat: "Stall",
-      next: {
-        left: { success: "well_bucket", great: "old_rooftops", failure: "angry_villager" },
-        right: { success: "well_bucket", great: "old_rooftops", failure: "scout_sniffs_path" },
-      },
-    },
-    locked_cottage: {
-      routeId: "house_route",
-      role: "threshold",
-      nodeId: "sleeping_cottage_02",
-      place: "Locked Cottage",
-      beat: "Door",
-      next: {
-        left: { success: "inside_sleeping_house", great: "inside_sleeping_house", failure: "angry_villager" },
-        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+        right: { success: "quiet_alley", great: "cellar_route", failure: "scout_sniffs_path" },
       },
     },
     angry_villager: {
-      routeId: "house_route",
+      encounterId: "village_infiltration",
       role: "complication",
       nodeId: "cottage_row_01",
       place: "Cottage Row",
       beat: "Alarm",
       next: {
         left: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
-        right: { success: "quiet_alley", great: "quiet_alley", failure: "scout_sniffs_path" },
+        right: { success: "quiet_alley", great: "market_back_exit", failure: "scout_sniffs_path" },
       },
     },
     scout_sniffs_path: {
-      routeId: "house_route",
+      encounterId: "village_infiltration",
       role: "complication",
       nodeId: "old_road_01",
       place: "Old Road",
       beat: "Patrol",
       next: {
-        left: { success: "quiet_alley", great: "quiet_alley", failure: "angry_villager" },
+        left: { success: "cottage_row_entry", great: "quiet_alley", failure: "angry_villager" },
         right: { success: "quiet_alley", great: "quiet_alley", failure: "angry_villager" },
       },
     },
-    old_rooftops: {
-      routeId: "market_route",
+    quiet_alley: {
+      encounterId: "village_infiltration",
       role: "exit",
+      nodeId: "back_lane_01",
+      place: "Back Lane",
+      beat: "Alley",
+      next: {
+        left: { success: "market_stall", great: "old_rooftops", failure: "scout_sniffs_path" },
+        right: { success: "market_stall", great: "market_back_exit", failure: "angry_villager" },
+      },
+    },
+    cellar_route: {
+      encounterId: "village_infiltration",
+      role: "shortcut",
+      nodeId: "back_lane_01",
+      place: "Cellar Route",
+      beat: "Hidden Passage",
+      next: {
+        left: { success: "market_back_exit", great: "market_back_exit", failure: "scout_sniffs_path" },
+        right: { success: "market_back_exit", great: "market_back_exit", failure: "angry_villager" },
+      },
+    },
+    market_stall: {
+      encounterId: "village_infiltration",
+      role: "payoff",
+      nodeId: "moonlit_market_01",
+      place: "Moonlit Market",
+      beat: "Stall",
+      next: {
+        left: { success: "market_back_exit", great: "market_back_exit", failure: "angry_villager" },
+        right: { success: "well_bucket", great: "old_rooftops", failure: "scout_sniffs_path" },
+      },
+    },
+    old_rooftops: {
+      encounterId: "village_infiltration",
+      role: "shortcut",
       nodeId: "market_back_01",
       place: "Rooftops",
       beat: "High Path",
       next: {
-        left: { success: "well_bucket", great: "well_bucket", failure: "scout_sniffs_path" },
-        right: { success: "well_bucket", great: "well_bucket", failure: "scout_sniffs_path" },
+        left: { success: "market_back_exit", great: "market_back_exit", failure: "scout_sniffs_path" },
+        right: { success: "market_back_exit", great: "market_back_exit", failure: "angry_villager" },
       },
     },
     well_bucket: {
-      routeId: "well_route",
-      role: "landmark",
+      encounterId: "village_infiltration",
+      role: "detour",
       nodeId: "old_stone_well_01",
       place: "Old Stone Well",
       beat: "Well",
+      next: {
+        left: { success: "market_back_exit", great: "market_back_exit", failure: "scout_sniffs_path" },
+        right: { success: "market_back_exit", great: "market_back_exit", failure: "angry_villager" },
+      },
+    },
+    market_back_exit: {
+      encounterId: "village_infiltration",
+      role: "exit",
+      nodeId: "market_back_01",
+      place: "Market Back",
+      beat: "Exit",
+      endsEncounter: true,
+      next: {
+        left: { success: "village_outskirts", great: "village_outskirts", failure: "scout_sniffs_path" },
+        right: { success: "village_outskirts", great: "village_outskirts", failure: "scout_sniffs_path" },
+      },
     },
   };
 
   const ROLE_LABELS = {
+    entry: "Entry",
+    approach: "Approach",
+    choice: "Branch",
     threshold: "Threshold",
     interior: "Interior",
-    exit: "Exit",
-    landmark: "Landmark",
     complication: "Complication",
+    exit: "Exit",
+    shortcut: "Shortcut",
+    payoff: "Payoff",
+    detour: "Detour",
   };
 
   function map() { return window.VILLAGE_NODE_MAP; }
@@ -154,14 +293,40 @@
     return flowStep(cardId)?.nodeId && nodeDef(flowStep(cardId).nodeId) ? flowStep(cardId).nodeId : fallbackNodeId;
   }
 
-  function ensureFlowState() {
-    game.villageCardFlow ||= {
-      routeId: "house_route",
+  function resetEncounterFlow(startFresh = false) {
+    const run = (game.villageEncounter?.run || 0) + (startFresh ? 1 : 0);
+    game.villageEncounter = {
+      encounterId: "village_infiltration",
+      run,
       trail: ["Forest Edge"],
-      role: "Approach",
-      beat: "Approach",
+      phase: "entry",
+      pressure: 0,
+      completed: false,
     };
+    game.villageCardFlow = {
+      routeId: "village_infiltration",
+      trail: ["Forest Edge"],
+      role: "Entry",
+      beat: "Village Edge",
+    };
+  }
+
+  function ensureFlowState() {
+    if (!game.villageEncounter || !game.villageCardFlow) resetEncounterFlow(false);
     game.villageCardFlow.trail ||= ["Forest Edge"];
+    game.villageEncounter.trail ||= ["Forest Edge"];
+  }
+
+  function startAtVillageEntry(force = false) {
+    addEncounterCards();
+    ensureFlowState();
+    if (force || !game.villageEncounter.started) {
+      game.currentCardId = START_CARD_ID;
+      game.pendingNextCardId = null;
+      game.hero.currentNodeId = flowNodeForCard(START_CARD_ID, map()?.startNodeId);
+      game.villageEncounter.started = true;
+      rememberFlowCard(START_CARD_ID, game.hero.currentNodeId);
+    }
   }
 
   function rememberFlowCard(cardId, nodeId = null) {
@@ -170,11 +335,15 @@
     const node = nodeDef(nodeId || step?.nodeId || currentNodeId());
     const place = step?.place || node?.label || "Village";
     const trail = game.villageCardFlow.trail || [];
+    if (step?.role === "entry" && cardId === START_CARD_ID) trail.length = 0;
     if (trail[trail.length - 1] !== place) trail.push(place);
     game.villageCardFlow.trail = trail.slice(-4);
-    game.villageCardFlow.routeId = step?.routeId || game.villageCardFlow.routeId || "village_route";
+    game.villageCardFlow.routeId = step?.encounterId || game.villageCardFlow.routeId || "village_infiltration";
     game.villageCardFlow.role = ROLE_LABELS[step?.role] || "Village";
     game.villageCardFlow.beat = step?.beat || cards?.[cardId]?.title || "Event";
+    game.villageEncounter.phase = step?.role || game.villageEncounter.phase;
+    game.villageEncounter.trail = [...game.villageCardFlow.trail];
+    game.villageEncounter.completed = Boolean(step?.endsEncounter);
   }
 
   function chooseFlowNextCard(cardId, side, outcomeType) {
@@ -265,8 +434,6 @@
   function chooseNextNode(fromId, choiceData, outcomeType) {
     const from = nodeDef(fromId);
     if (!from) return currentNodeId();
-    if (outcomeType === "failure" && Math.random() < 0.45) return fromId;
-
     const candidates = connected(fromId).filter(nodeDef);
     if (!candidates.length) return fromId;
 
@@ -320,7 +487,7 @@
         const nextNodeId = flowNodeForCard(flowNextCardId, chooseNextNode(nodeId, choiceData, outcomeType));
         game.pendingNextCardId = flowNextCardId;
         game.hiddenMapPendingMove = { fromNodeId: nodeId, toNodeId: nextNodeId, cardId, nextCardId: flowNextCardId, chain: false, flow: true };
-        game.log.unshift(`Village flow: ${cards[cardId]?.title || "Event"} → ${cards[flowNextCardId].title}.`);
+        game.log.unshift(`Village encounter: ${cards[cardId]?.title || "Event"} → ${cards[flowNextCardId].title}.`);
         return;
       }
 
@@ -364,6 +531,7 @@
 
       if (move && !game.awaitingResultAck) {
         if (!move.chain || CLEAR_NODE_AFTER_CARDS.has(move.cardId)) markNodeSpent(move.fromNodeId, move.cardId);
+        if (flowStep(move.cardId)?.endsEncounter && game.currentCardId === START_CARD_ID) resetEncounterFlow(true);
         game.hiddenMapPendingMove = null;
         syncPartyHeroSummary?.();
       }
@@ -377,20 +545,37 @@
     return true;
   }
 
+  function installResetWrapper() {
+    const baseReset = window.resetGame || resetGame;
+    if (!baseReset || baseReset.__villageEncounterWrapped) return true;
+    const wrapped = function resetWithVillageEncounter(...args) {
+      const result = baseReset.apply(this, args);
+      resetEncounterFlow(false);
+      startAtVillageEntry(true);
+      render?.();
+      return result;
+    };
+    wrapped.__villageEncounterWrapped = true;
+    window.resetGame = wrapped;
+    try { resetGame = wrapped; } catch (_) {}
+    return true;
+  }
+
   function install(attempt = 0) {
     if (!window.VILLAGE_NODE_MAP?.nodes || typeof cards === "undefined" || typeof renderExplore !== "function") {
       if (attempt < 30) setTimeout(() => install(attempt + 1), 40);
       return;
     }
 
+    addEncounterCards();
     ensureNodeState?.();
     ensureFlowState();
-    game.hero.currentNodeId = findNodeForCard(game.currentCardId) || currentNodeId();
-    rememberFlowCard(game.currentCardId, game.hero.currentNodeId);
+    startAtVillageEntry(!game.villageEncounter?.started);
     const renderReady = installRenderExploreWrapper();
     const chooseReady = installChooseWrapper();
     const ackReady = installAckWrapper();
-    window[READY_FLAG] = renderReady && chooseReady && ackReady;
+    const resetReady = installResetWrapper();
+    window[READY_FLAG] = renderReady && chooseReady && ackReady && resetReady;
     game.hiddenMapMode = true;
     game.activeEncounter = null;
     game.pendingNodeMove = null;
