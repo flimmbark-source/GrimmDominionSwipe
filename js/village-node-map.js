@@ -1,5 +1,6 @@
 // Village node-web map: equal-size nodes over a background, with tags driving events and encounters.
 (() => {
+  const SHOW_LEGACY_NODE_PANEL = new URLSearchParams(window.location.search).get("legacyNodePanel") === "1";
   const MAP = {
     id: "village",
     title: "Whispermoor Village",
@@ -259,21 +260,23 @@
   };
   drawNextCardId = window.drawNextCardId;
 
-  const baseRenderExplore = renderExplore;
-  window.renderExplore = function renderExplore() {
-    const html = baseRenderExplore();
-    return html.replace(`<section class="gd-region-header">`, `${renderVillageNodeMap()}<section class="gd-region-header">`);
-  };
-  renderExplore = window.renderExplore;
+  if (SHOW_LEGACY_NODE_PANEL) {
+    const baseRenderExplore = renderExplore;
+    window.renderExplore = function renderExplore() {
+      const html = baseRenderExplore();
+      return html.replace(`<section class="gd-region-header">`, `${renderVillageNodeMap()}<section class="gd-region-header">`);
+    };
+    renderExplore = window.renderExplore;
 
-  const baseBindEvents = bindEvents;
-  window.bindEvents = function bindEvents() {
-    baseBindEvents();
-    document.querySelectorAll("[data-node-id]").forEach(button => {
-      button.addEventListener("click", () => moveHeroToNode(button.dataset.nodeId));
-    });
-  };
-  bindEvents = window.bindEvents;
+    const baseBindEvents = bindEvents;
+    window.bindEvents = function bindEvents() {
+      baseBindEvents();
+      document.querySelectorAll("[data-node-id]").forEach(button => {
+        button.addEventListener("click", () => moveHeroToNode(button.dataset.nodeId));
+      });
+    };
+    bindEvents = window.bindEvents;
+  }
 
   window.nodeCard = function nodeCard(nodeId, cardId) { return { type: "nodeCard", nodeId, cardId }; };
   window.nodeThreat = function nodeThreat(nodeId, threatId) { return { type: "nodeThreat", nodeId, threatId }; };

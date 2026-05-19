@@ -1,6 +1,22 @@
 (() => {
-  const FLOAT_BEFORE_TAB_FLIGHT_MS = 2000;
   const STACK_GAP_PX = 18;
+
+  const GHOST_COLORS = {
+    gold: "#e4b84e",
+    damage: "#f05c5c",
+    status: "#7ce58d",
+    noise: "#b78cff",
+    item: "#71d5ff",
+    xp: "#f3ec83",
+    food: "#cf9f5a",
+    heal: "#5ff08a",
+    stat: "#88d8ff",
+    time: "#f0df7a",
+    card: "#71d5ff",
+  };
+
+  const rewardKindFromClass = (className = "") =>
+    Object.keys(GHOST_COLORS).find(kind => className.split(/\s+/).includes(kind)) || "status";
 
   const destinationForGhost = (ghost) => {
     const text = (ghost.textContent || "").toLowerCase();
@@ -68,48 +84,65 @@
     }, delay);
   };
 
-  const portalGhost = (ghost) => {
-    if (ghost.dataset.portalSet) return;
-    ghost.dataset.portalSet = "true";
-    const destination = destinationForGhost(ghost);
-    ghost.dataset.destination = destination;
+  const createPortalClone = ({ className, html, left, top, destination }) => {
+    const target = findDestinationTarget(destination);
+    const targetRect = target?.getBoundingClientRect();
+    const stackIndex = activeStackIndex(destination);
+    const point = targetPoint(destination, targetRect, stackIndex);
+    const clone = document.createElement("div");
+    const kind = rewardKindFromClass(className);
 
-    window.setTimeout(() => {
-      if (!ghost.isConnected) return;
-      const rect = ghost.getBoundingClientRect();
-      if (rect.width < 1 || rect.height < 1) return;
-      const target = findDestinationTarget(destination);
-      const targetRect = target?.getBoundingClientRect();
-      const clone = ghost.cloneNode(true);
-      const stackIndex = activeStackIndex(destination);
-      const point = targetPoint(destination, targetRect, stackIndex);
+    clone.className = `${className || ""} gd-ghost-portal to-${destination}`.replace("gd-reward-ghost", "").trim();
+    clone.classList.add(kind);
+    clone.dataset.destination = destination;
+    clone.innerHTML = html;
+    clone.style.left = `${left}px`;
+    clone.style.top = `${top}px`;
+    clone.style.bottom = "auto";
+    clone.style.setProperty("--ghost-color", GHOST_COLORS[kind] || GHOST_COLORS.status);
+    clone.style.setProperty("color", `var(--ghost-color)`);
+    clone.style.setProperty("--handoff-target-x", `${point.x}px`);
+    clone.style.setProperty("--handoff-target-y", `${point.y}px`);
 
-      clone.className = ghost.className;
-      clone.classList.add("gd-ghost-portal", `to-${destination}`);
-      clone.classList.remove("gd-reward-ghost");
-      clone.dataset.destination = destination;
-      clone.style.left = `${rect.left + rect.width / 2}px`;
-      clone.style.top = `${rect.top}px`;
-      clone.style.bottom = "auto";
-      clone.style.setProperty("--handoff-target-x", `${point.x}px`);
-      clone.style.setProperty("--handoff-target-y", `${point.y}px`);
-
-      document.body.appendChild(clone);
-      ghost.style.visibility = "hidden";
-      pulseTarget(destination, 2100);
-      clone.addEventListener("animationend", () => clone.remove(), { once: true });
-    }, FLOAT_BEFORE_TAB_FLIGHT_MS);
+    document.body.appendChild(clone);
+    pulseTarget(destination, 1850);
+    clone.addEventListener("animationend", () => clone.remove(), { once: true });
+    return clone;
   };
 
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (!(node instanceof HTMLElement)) continue;
-        if (node.classList.contains("gd-reward-ghost")) portalGhost(node);
-        node.querySelectorAll?.(".gd-reward-ghost").forEach(portalGhost);
-      }
-    }
-  });
+  const portalGhostNow = (ghost) => {
+    if (!ghost || ghost.dataset.portalCloned) return false;
+    if (!ghost.isConnected) return false;
 
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+    const rect = ghost.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return false;
+
+    ghost.dataset.portalCloned = "true";
+    const destination = ghost.dataset.destination || destinationForGhost(ghost);
+    ghost.dataset.destination = destination;
+
+    createPortalClone({
+      className: ghost.className,
+      html: ghost.innerHTML,
+      left: rect.left + rect.width / 2,
+      top: rect.top,
+      destination,
+    });
+    ghost.style.visibility = "hidden";
+    return true;
+  };
+
+  window.handoffRewardGhostsNow = function handoffRewardGhostsNow() {
+    let count = document.querySelectorAll(".gd-ghost-portal").length;
+    document.querySelectorAll(".gd-reward-ghost:not([data-portal-cloned])").forEach(ghost => {
+      if (portalGhostNow(ghost)) count += 1;
+    });
+    return count;
+  };
+
+  // No automatic observer handoff. Visible ghosts rise first; result-overlay-auto-advance
+  // calls handoffRewardGhostsNow() once before it advances to the next event.
+  window.launchRewardGhostHandoffsFromData = function launchRewardGhostHandoffsFromData() {
+    return 0;
+  };
 })();

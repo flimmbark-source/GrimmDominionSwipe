@@ -1,0 +1,86 @@
+/* Original Explore screen only: preserve the real event-card markup, pin the Goblin bar above nav, and keep card descriptions visible. */
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) {
+  --gd-explore-footer-height: 50px;
+  --gd-explore-card-bottom-gap: 0px;
+  position: relative !important;
+  display: grid !important;
+  /* top timer / route breadcrumb / region header / flexible card area */
+  grid-template-rows: auto auto auto minmax(0, 1fr) !important;
+  gap: 0 !important;
+  padding-bottom: calc(var(--gd-explore-footer-height) + var(--gd-explore-card-bottom-gap)) !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip):not(:has(> .gd-route-breadcrumb)) {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-result-toast {
+  display: none !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card {
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  block-size: 100% !important;
+  inline-size: auto !important;
+  min-block-size: 0 !important;
+  margin: 0 14px var(--gd-explore-card-bottom-gap) !important;
+  display: grid !important;
+  grid-template-rows: minmax(176px, 38%) minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card .gd-card-art {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card .gd-card-body {
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-bottom: 10px !important;
+  overflow: hidden !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-card-text {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+  flex: 0 1 auto !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-swipe-label {
+  display: none !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-choice-row {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) .gd-action-result {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip,
+.gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-footer-chip.slim {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 0 !important;
+  margin: 0 !important;
+  height: var(--gd-explore-footer-height) !important;
+  z-index: 5 !important;
+}
+
+@media (max-height: 700px) {
+  .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) {
+    --gd-explore-footer-height: 46px;
+  }
+
+  .gd-main-scroll:has(> .gd-card):has(> .gd-footer-chip) > .gd-card {
+    grid-template-rows: minmax(130px, 30%) minmax(0, 1fr) !important;
+  }
+}
