@@ -4,9 +4,8 @@
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
-  const CARD_ADVANCE_MS = 2400;
+  const CARD_ADVANCE_MS = 140;
   const OVERLAY_TOTAL_MS = 4900;
-  const MIN_GHOST_MS = 2350;
   let autoAckTimer = null;
   let overlayRemoveTimer = null;
 
@@ -58,19 +57,12 @@
   function scheduleAutoAck() {
     clearAutoAck();
     if (!game?.awaitingResultAck || !game?.lastAction) return;
-    const ghostCount = game.lastAction.ghosts?.length || 0;
-    const ghostDelay = Math.max(0, ghostCount - 1) * 130;
-    const delay = Math.max(CARD_ADVANCE_MS, MIN_GHOST_MS + ghostDelay);
 
     autoAckTimer = setTimeout(() => {
       if (!game.awaitingResultAck || !game.lastAction) return;
-      window.handoffRewardGhostsNow?.();
       game.resultReady = true;
-      setTimeout(() => {
-        if (!game.awaitingResultAck || !game.lastAction) return;
-        try { acknowledgeResult(); } catch (_) {}
-      }, 140);
-    }, delay);
+      try { acknowledgeResult(); } catch (_) {}
+    }, CARD_ADVANCE_MS);
   }
 
   const baseChoose = window.choose || (typeof choose !== "undefined" ? choose : null);
