@@ -5,7 +5,7 @@
   window[READY_FLAG] = true;
 
   const CARD_ADVANCE_MS = 140;
-  const OVERLAY_TOTAL_MS = 4900;
+  const OVERLAY_TOTAL_MS = 3400;
   let autoAckTimer = null;
   let overlayRemoveTimer = null;
 
