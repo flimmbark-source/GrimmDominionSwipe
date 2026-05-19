@@ -11,7 +11,7 @@
   width: min(360px, calc(100% - 42px));
   transform: translate(-50%, -50%);
   pointer-events: none;
-  animation: gd-result-overlay-lifecycle 1.75s ease-in-out both;
+  animation: gd-result-overlay-lifecycle 4.9s ease-in-out both;
 }
 
 .gd-result-overlay-card {
@@ -87,12 +87,12 @@
     transform: translate(-50%, -38%) scale(.94);
     filter: blur(3px);
   }
-  16% {
+  7% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
     filter: blur(0);
   }
-  76% {
+  88% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
     filter: blur(0);
