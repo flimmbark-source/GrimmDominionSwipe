@@ -4,8 +4,8 @@
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
-  const OVERLAY_MS = 2400;
-  const MIN_GHOST_MS = 2350;
+  const OVERLAY_MS = 4900;
+  const MIN_GHOST_MS = 4850;
   let autoAckTimer = null;
 
   function labelFor(type) {
